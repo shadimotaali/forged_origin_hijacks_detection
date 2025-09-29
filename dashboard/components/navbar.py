@@ -1,4 +1,5 @@
 import reflex as rx
+from backend.oauth import AuthState  # ✅ import your AuthState
 
 max_width = "1400px"  # same value as your table/content
 
@@ -8,7 +9,7 @@ def navbar() -> rx.Component:
             rx.flex(
                 # --- Inner constrained content ---
                 rx.hstack(
-                    # Left side: title instead of images
+                    # Left side: title
                     rx.link(
                         rx.text(
                             "DFOH",
@@ -28,9 +29,38 @@ def navbar() -> rx.Component:
                     rx.spacer(),
                     # Right side: navigation links
                     rx.hstack(
-                        rx.link(rx.text("New Links", size="4", weight="medium"), href="/"),
-                        rx.link(rx.text("Your Cases", size="4", weight="medium"), href="/your_cases"),
-                        rx.link(rx.text("Documentation", size="4", weight="medium"), href="/documentation"),
+                        rx.link(
+                            rx.text("New Links", size="4", weight="medium"),
+                            href="/",
+                        ),
+                        rx.link(
+                            rx.text("Your Cases", size="4", weight="medium"),
+                            href="/your_cases",
+                        ),
+                        rx.link(
+                            rx.text("Documentation", size="4", weight="medium"),
+                            href="/documentation",
+                        ),
+                        # ✅ conditional login / profile
+                        rx.cond(
+                            AuthState.is_authenticated,
+                            rx.hstack(
+                                rx.link(
+                                    rx.text("Profile", size="4", weight="medium"),
+                                    href="/profile",
+                                ),
+                                rx.link(
+                                    rx.text("Logout", size="4", weight="medium"),
+                                    on_click=AuthState.logout,
+                                    style={"cursor": "pointer"},
+                                ),
+                                spacing="4",
+                            ),
+                            rx.link(
+                                rx.text("Login", size="4", weight="medium"),
+                                href="/login",
+                            ),
+                        ),
                         spacing="6",
                         align="center",
                     ),

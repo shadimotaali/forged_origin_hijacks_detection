@@ -61,3 +61,7 @@ core/topological/standalone_eval/__pycache__
 core/topological/tmp/*
 
 venv
+dashboard/.env
+dashboard/__pycache__
+dashboard/*/__pycache__
+
