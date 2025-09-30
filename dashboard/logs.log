@@ -1,42 +1,18 @@
-2025-09-30 17:15:03,370 - INFO - Starting OAuth2 callback
-2025-09-30 17:15:05,827 - INFO - Starting OAuth2 callback
-2025-09-30 17:15:56,359 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
-2025-09-30 17:16:36,520 - INFO - Logging out user: None
-2025-09-30 17:16:36,522 - INFO - Cookies removed for user None
-2025-09-30 17:16:36,880 - INFO - Starting OAuth2 callback
-2025-09-30 17:16:36,998 - INFO - Starting OAuth2 callback
-2025-09-30 17:19:51,761 - INFO - Starting OAuth2 callback
-2025-09-30 17:19:57,918 - INFO - Starting OAuth2 callback
-2025-09-30 17:20:04,358 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
-2025-09-30 17:20:33,587 - INFO - Starting OAuth2 callback
-2025-09-30 17:39:39,125 - INFO - Starting OAuth2 callback
-2025-09-30 17:39:41,046 - INFO - Starting OAuth2 callback
-2025-09-30 17:39:49,646 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
-2025-09-30 17:42:17,497 - INFO - Starting OAuth2 callback
-2025-09-30 17:42:20,375 - INFO - Starting OAuth2 callback
-2025-09-30 17:42:27,396 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
-2025-09-30 17:44:01,064 - INFO - Starting OAuth2 callback
-2025-09-30 17:44:02,988 - INFO - Starting OAuth2 callback
-2025-09-30 17:44:07,622 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
-2025-09-30 17:44:50,319 - INFO - Starting OAuth2 callback
-2025-09-30 17:44:54,481 - INFO - Starting OAuth2 callback
-2025-09-30 17:44:59,764 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
-2025-09-30 17:53:39,031 - INFO - Starting OAuth2 callback
-2025-09-30 17:53:40,864 - INFO - Starting OAuth2 callback
-2025-09-30 17:54:02,482 - INFO - Starting OAuth2 callback
-2025-09-30 17:54:11,247 - INFO - Starting OAuth2 callback
-2025-09-30 17:54:26,873 - INFO - Starting OAuth2 callback
-2025-09-30 17:55:51,181 - INFO - Starting OAuth2 callback
-2025-09-30 17:56:04,384 - INFO - Starting OAuth2 callback
-2025-09-30 17:56:09,783 - INFO - Starting OAuth2 callback
-2025-09-30 17:56:17,228 - INFO - Starting OAuth2 callback
-2025-09-30 17:56:30,500 - INFO - Starting OAuth2 callback
-2025-09-30 17:56:38,337 - INFO - Starting OAuth2 callback
-2025-09-30 17:56:44,446 - INFO - Starting OAuth2 callback
-2025-09-30 18:11:27,080 - INFO - Starting OAuth2 callback
-2025-09-30 18:11:35,318 - INFO - Starting OAuth2 callback
-2025-09-30 18:11:43,327 - INFO - Starting OAuth2 callback
-2025-09-30 18:14:21,401 - INFO - Starting OAuth2 callback
-2025-09-30 18:15:02,926 - INFO - Starting OAuth2 callback
-2025-09-30 18:15:36,888 - INFO - Starting OAuth2 callback
-2025-09-30 18:15:40,953 - INFO - Starting OAuth2 callback
+2025-09-30 18:46:18,440 - INFO - Starting OAuth2 callback
+2025-09-30 18:46:27,292 - INFO - Starting OAuth2 callback
+2025-09-30 18:46:32,689 - INFO - Starting OAuth2 callback
+2025-09-30 18:52:20,290 - INFO - Starting OAuth2 callback
+2025-09-30 18:52:27,639 - INFO - Starting OAuth2 callback
+2025-09-30 18:52:35,305 - INFO - Starting OAuth2 callback
+2025-09-30 18:58:01,981 - INFO - Starting OAuth2 callback
+2025-09-30 18:58:58,960 - INFO - Starting OAuth2 callback
+2025-09-30 18:59:10,387 - INFO - Starting OAuth2 callback
+2025-09-30 18:59:17,708 - INFO - Starting OAuth2 callback
+2025-09-30 18:59:20,955 - INFO - Starting OAuth2 callback
+2025-09-30 18:59:22,319 - INFO - Starting OAuth2 callback
+2025-09-30 19:05:48,952 - INFO - Starting OAuth2 callback
+2025-09-30 19:05:55,411 - INFO - Starting OAuth2 callback
+2025-09-30 19:06:26,831 - INFO - Starting OAuth2 callback
+2025-09-30 19:06:45,044 - INFO - Starting OAuth2 callback
+2025-09-30 19:08:50,754 - INFO - Starting OAuth2 callback
+2025-09-30 19:09:43,611 - INFO - Starting OAuth2 callback

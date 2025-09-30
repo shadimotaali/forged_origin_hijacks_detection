@@ -97,8 +97,8 @@ class YourCasesState(rx.State):
     async def load_links(self):
         try:
             now = datetime.now(timezone.utc)
-            start_time = (now - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%S")
-            end_time = now.strftime("%Y-%m-%dT%H:%M:%S")
+            start_time = (now - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M")
+            end_time = now.strftime("%Y-%m-%dT%H:%M")
 
             async with self:
                 self.loading = True
@@ -189,6 +189,7 @@ class OperatorFeedbackState(rx.State):
     current_case_id: Optional[int] = None
     decision: Optional[str] = None   # "legitimate" or "suspicious"
     feedback_text: str = ""
+    authorize_others: bool = True    # ✅ new field, checked by default
 
     # -----------------------------
     # Modal helpers
@@ -200,6 +201,7 @@ class OperatorFeedbackState(rx.State):
         self.current_case_id = case_id
         self.decision = None
         self.feedback_text = ""
+        self.authorize_others = True   # reset default when opening
 
     @rx.event
     def close_modal(self):
@@ -208,6 +210,7 @@ class OperatorFeedbackState(rx.State):
         self.current_case_id = None
         self.decision = None
         self.feedback_text = ""
+        self.authorize_others = True   # reset default when opening
 
     # -----------------------------
     # Field setters
@@ -219,6 +222,10 @@ class OperatorFeedbackState(rx.State):
     @rx.event
     def set_decision(self, decision: str):
         self.decision = decision
+
+    @rx.event
+    def toggle_authorize(self, value: bool):
+        self.authorize_others = value
 
     # -----------------------------
     # API submission
@@ -236,6 +243,7 @@ class OperatorFeedbackState(rx.State):
                     "new_link_id": self.current_case_id,
                     "decision": self.decision,
                     "feedback": self.feedback_text,
+                    "authorize_others": "true" if self.authorize_others else "false", 
                     "api_key": os.environ.get("SECURED_WRITE_API_KEY"),
                 },
                 timeout=10,
@@ -457,6 +465,11 @@ def operator_feedback_modal() -> rx.Component:
                     on_change=OperatorFeedbackState.set_feedback,
                     width="100%",
                 ),
+                rx.checkbox(
+                    "Authorize other operators to see my feedback",
+                    checked=OperatorFeedbackState.authorize_others,
+                    on_change=OperatorFeedbackState.toggle_authorize,
+                ),
                 rx.button(
                     "Submit",
                     on_click=OperatorFeedbackState.submit_feedback,
@@ -490,7 +503,7 @@ def yourcases_table() -> rx.Component:
                     rx.table.column_header_cell("Observed Paths", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Recurrent", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Details", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Feedback", style={"verticalAlign": "middle"}),  # NEW
+                    rx.table.column_header_cell("Give feedback", style={"verticalAlign": "middle"}),  # NEW
                 ),
                 style={
                     "position": "sticky",

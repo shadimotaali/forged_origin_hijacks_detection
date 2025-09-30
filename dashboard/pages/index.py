@@ -6,11 +6,31 @@ import requests
 from typing import List, Tuple, Optional
 
 
+
+DECISION_LEGITIMATE = 1
+DECISION_MALICIOUS  = 2
+DECISION_UNKNOWN    = 3
+
+
+def parse_decision(decision :int):
+    if decision == DECISION_LEGITIMATE:
+        return "legitimate"
+    
+    elif decision == DECISION_MALICIOUS:
+        return "malicious"
+    
+    elif decision == DECISION_UNKNOWN:
+        return "unknown"
+    
+    return ""
+
+
+
 # -----------------------------
 # Helpers / validation
 # -----------------------------
 def case_is_correct(case_: dict[str, str | int | list[str]]):
-   required = [
+    required = [
        "date",
        "as1",
        "as2",
@@ -21,23 +41,37 @@ def case_is_correct(case_: dict[str, str | int | list[str]]):
        "nb_aspaths_observed",
        "is_reccurent",
        "id",
-   ]
-   for k in required:
-       if k not in case_:
-           return False, None
+    ]
 
-   return True, (
-       case_["date"].replace("T", " "),                         # 0 date as str "YYYY-MM-DD HH:MM:SS"
-       str(case_["as1"]),                                       # 1 as1
-       str(case_["as2"]),                                       # 2 as2
-       [str(x) for x in case_["presumed_attacker"]],            # 3 attackers list[str]
-       [str(x) for x in case_["presumed_victims"]],             # 4 victims list[str]
-       str(case_["inference_result"]),                          # 5 inference_result
-       int(case_["confidence_level"]),                          # 6 confidence (int)
-       int(case_["nb_aspaths_observed"]),                       # 7 nb paths (int)
-       bool(case_["is_reccurent"]),                             # 8 recurrent (bool)
-       int(case_["id"])
-   )
+    for k in required:
+        if k not in case_:
+            return False, None
+    
+    to_show = False
+    feedback = ""
+    comment = ""
+    
+    if "operator_feedback" in case_ and "operator_comment" in case_:
+       to_show = True
+       feedback = parse_decision(int(case_["operator_feedback"]))
+       comment = str(case_["operator_comment"])
+
+
+    return True, (
+        case_["date"].replace("T", " "),                         # 0 date as str "YYYY-MM-DD HH:MM:SS"
+        str(case_["as1"]),                                       # 1 as1
+        str(case_["as2"]),                                       # 2 as2
+        [str(x) for x in case_["presumed_attacker"]],            # 3 attackers list[str]
+        [str(x) for x in case_["presumed_victims"]],             # 4 victims list[str]
+        str(case_["inference_result"]),                          # 5 inference_result
+        int(case_["confidence_level"]),                          # 6 confidence (int)
+        int(case_["nb_aspaths_observed"]),                       # 7 nb paths (int)
+        bool(case_["is_reccurent"]),                             # 8 recurrent (bool)
+        int(case_["id"]),
+        to_show,
+        feedback,
+        comment
+    )
 
 
 
@@ -81,9 +115,9 @@ class NewLinksState(rx.State):
             params = {}
 
             if self.start_dt_local:
-                params["start"] = self.start_dt_local
+                params["start_time"] = self.start_dt_local
             if self.end_dt_local:
-                params["end"] = self.end_dt_local
+                params["end_time"] = self.end_dt_local
             if self.as1_filter:
                 params["asn"] = self.as1_filter
             if self.as2_filter:
@@ -262,6 +296,35 @@ def _victim_cell(values: List[str]) -> rx.Component:
        ),
        style={"verticalAlign": "middle"}
    )
+
+
+
+def _feedback_cell(to_show: bool, feedback: str, comment: str) -> rx.Component:
+    return rx.table.cell(
+        rx.cond(
+            to_show,
+            rx.hover_card.root(
+                rx.hover_card.trigger(
+                    rx.badge("Feedback", variant="surface", style={"cursor": "pointer"})
+                ),
+                rx.hover_card.content(
+                    rx.vstack(
+                        rx.text(f"Feedback: {feedback}", weight="medium"),
+                        rx.cond(
+                            comment,
+                            rx.text(f"Comment: {comment}"),
+                            rx.text("No comment"),
+                        ),
+                        spacing="2",
+                        align="start",
+                        style={"maxWidth": "300px", "whiteSpace": "normal"},
+                    )
+                ),
+            ),
+            rx.text("-", style={"color": "var(--gray-8)"})
+        ),
+        style={"verticalAlign": "middle", "textAlign": "center"},
+    )
 
 
 def filters_panel() -> rx.Component:
@@ -528,6 +591,7 @@ def new_links_table() -> rx.Component:
                     rx.table.column_header_cell("Observed Paths", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Recurrent", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Details", style={"verticalAlign": "middle"}),
+                    rx.table.column_header_cell("Feedback", style={"verticalAlign": "middle"}),
                 ),
                 style={
                     "position": "sticky",
@@ -594,6 +658,7 @@ def new_links_table() -> rx.Component:
                                     ),
                                     style={"textAlign": "center", "verticalAlign": "middle"},
                                 ),
+                                _feedback_cell(row[10], row[11], row[12]),
                             ),
                         )
                     ),
