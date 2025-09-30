@@ -6,6 +6,7 @@ from pages.your_cases import your_cases
 from pages.documentation import documentation
 from pages.detail import detail_page
 from pages.login import login
+from pages.profile import profile
 
 app = rx.App()
 
@@ -15,4 +16,5 @@ app.add_page(your_cases, title="Your Cases")
 app.add_page(documentation, title="Documentation")
 app.add_page(detail_page, title="Case Details")
 app.add_page(login, title="Login")
+app.add_page(profile, title="Profile")
 

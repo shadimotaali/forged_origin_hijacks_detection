@@ -20,7 +20,7 @@ def login() -> rx.Component:
                 ),
                 rx.button(
                     rx.hstack(
-                        rx.image(src="/peeringdb.png", width="160px", height="auto"),
+                        rx.image(src="/pdb-logo-coloured.png", width="160px", height="auto"),
                     ),
                     size="4",
                     variant="solid",

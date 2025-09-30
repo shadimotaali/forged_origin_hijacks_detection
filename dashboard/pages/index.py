@@ -1,6 +1,7 @@
 import reflex as rx
 from components.navbar import navbar
 from components.footer import footer
+from backend.oauth import AuthState
 import requests
 from typing import List, Tuple, Optional
 
@@ -616,7 +617,7 @@ def new_links_table() -> rx.Component:
 
 
 
-@rx.page(on_load=[NewLinksState.load_links], route="/")
+@rx.page(on_load=[NewLinksState.load_links, AuthState.oauth2_callback], route="/")
 def index() -> rx.Component:
     return rx.box(
         navbar(),

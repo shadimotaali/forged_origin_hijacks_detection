@@ -18,6 +18,7 @@ def documentation() -> rx.Component:
             width="100%",
             padding_x=["1rem","2rem","3rem","3rem"],
             padding_y="2rem",
+            margin_top="5rem",   # 👈 push content below fixed navbar
             style={"maxWidth": "1400px", "margin": "0 auto"},
         ),
         footer(),
