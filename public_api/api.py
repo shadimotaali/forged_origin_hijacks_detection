@@ -1,4 +1,5 @@
 from public_api.read import get_new_links, get_inference_details
+from public_api.write import operator_feedback
 import os
 from fastapi import FastAPI, Query, HTTPException
 import psycopg2
@@ -6,6 +7,26 @@ import uvicorn
 import time
 import datetime
 import sys
+
+
+
+
+DECISION_LEGITIMATE = 1
+DECISION_MALICIOUS  = 2
+DECISION_UNKNOWN    = 3
+
+
+def parse_decision(decision :str):
+    if decision == "legitimate":
+        return DECISION_LEGITIMATE
+    
+    elif decision == "malicious":
+        return DECISION_MALICIOUS
+    
+    elif decision == "unknown":
+        return DECISION_UNKNOWN
+    
+    return None
 
 
 
@@ -39,6 +60,7 @@ class DFOHExternalAPI:
         self.app = FastAPI()
         self.app.get("/new_links")(self._get_new_link)
         self.app.get("/inference_details")(self._get_inference_details)
+        self.app.get("/operator_feedback")(self._get_operator_feedback)
 
 
 
@@ -196,6 +218,29 @@ class DFOHExternalAPI:
             new_link_ids_val.append(int(val))
 
         result = get_inference_details(self.pg_helper, new_link_ids_val)
+
+        if result["code"] != 200:
+            raise HTTPException(status_code=result["code"], detail=result["detail"])
+        
+        return result
+    
+
+
+    def _get_operator_feedback(self,
+                               new_link_id :int=Query(..., description="Identifier of the link for which we want to give feedback."),
+                               decision :str=Query(..., description="Simple feedback of the operator. The value be either 'legitimate', 'suspicious', or 'unknown'."),
+                               feedback :str=Query(None, description="Extended comment of the operator regarding the new link case."),
+                               api_key :str=Query(..., description="Mandatory API key. Enables to use this endpoint only from the website.")):
+        
+        if api_key != os.environ.get("SECURED_WRITE_API_KEY"):
+            raise HTTPException(status_code=400, detail="Unable to recognize API key, skiping.")
+        
+        parsed_decision = parse_decision(decision)
+
+        if parsed_decision is None:
+            raise HTTPException(status_code=400, detail="Parameter 'decision' must be a string value among 'legitimate', 'suspicious', or 'unknown'. Value '{}' is not valid.".format(decision))
+        
+        result = operator_feedback(self.pg_helper, new_link_id, parsed_decision, feedback)
 
         if result["code"] != 200:
             raise HTTPException(status_code=result["code"], detail=result["detail"])

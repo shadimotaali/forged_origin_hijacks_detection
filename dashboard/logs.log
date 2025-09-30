@@ -1,26 +1,42 @@
-2025-09-30 15:30:01,565 - INFO - Logging out user: None
-2025-09-30 15:30:01,566 - INFO - Cookies removed for user None
-2025-09-30 15:30:01,854 - INFO - Starting OAuth2 callback
-2025-09-30 15:30:02,261 - INFO - Starting OAuth2 callback
-2025-09-30 15:30:05,082 - INFO - Starting OAuth2 callback
-2025-09-30 15:32:28,203 - INFO - Starting OAuth2 callback
-2025-09-30 15:33:39,100 - INFO - Starting OAuth2 callback
-2025-09-30 15:33:49,814 - INFO - Starting OAuth2 callback
-2025-09-30 15:45:54,448 - INFO - Starting OAuth2 callback
-2025-09-30 15:47:07,477 - INFO - Starting OAuth2 callback
-2025-09-30 15:47:47,039 - INFO - Starting OAuth2 callback
-2025-09-30 15:47:50,421 - INFO - Starting OAuth2 callback
-2025-09-30 15:47:53,170 - INFO - Starting OAuth2 callback
-2025-09-30 15:52:01,700 - INFO - Starting OAuth2 callback
-2025-09-30 15:52:13,611 - INFO - Starting OAuth2 callback
-2025-09-30 15:52:22,139 - INFO - Starting OAuth2 callback
-2025-09-30 15:54:13,627 - INFO - Starting OAuth2 callback
-2025-09-30 15:54:21,334 - INFO - Starting OAuth2 callback
-2025-09-30 15:56:00,106 - INFO - Starting OAuth2 callback
-2025-09-30 15:56:15,088 - INFO - Starting OAuth2 callback
-2025-09-30 15:58:17,496 - INFO - Starting OAuth2 callback
-2025-09-30 15:58:19,577 - INFO - Starting OAuth2 callback
-2025-09-30 15:59:11,419 - INFO - Logging out user: None
-2025-09-30 15:59:11,420 - INFO - Cookies removed for user None
-2025-09-30 15:59:11,534 - INFO - Starting OAuth2 callback
-2025-09-30 15:59:43,651 - INFO - Starting OAuth2 callback
+2025-09-30 17:15:03,370 - INFO - Starting OAuth2 callback
+2025-09-30 17:15:05,827 - INFO - Starting OAuth2 callback
+2025-09-30 17:15:56,359 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
+2025-09-30 17:16:36,520 - INFO - Logging out user: None
+2025-09-30 17:16:36,522 - INFO - Cookies removed for user None
+2025-09-30 17:16:36,880 - INFO - Starting OAuth2 callback
+2025-09-30 17:16:36,998 - INFO - Starting OAuth2 callback
+2025-09-30 17:19:51,761 - INFO - Starting OAuth2 callback
+2025-09-30 17:19:57,918 - INFO - Starting OAuth2 callback
+2025-09-30 17:20:04,358 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
+2025-09-30 17:20:33,587 - INFO - Starting OAuth2 callback
+2025-09-30 17:39:39,125 - INFO - Starting OAuth2 callback
+2025-09-30 17:39:41,046 - INFO - Starting OAuth2 callback
+2025-09-30 17:39:49,646 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
+2025-09-30 17:42:17,497 - INFO - Starting OAuth2 callback
+2025-09-30 17:42:20,375 - INFO - Starting OAuth2 callback
+2025-09-30 17:42:27,396 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
+2025-09-30 17:44:01,064 - INFO - Starting OAuth2 callback
+2025-09-30 17:44:02,988 - INFO - Starting OAuth2 callback
+2025-09-30 17:44:07,622 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
+2025-09-30 17:44:50,319 - INFO - Starting OAuth2 callback
+2025-09-30 17:44:54,481 - INFO - Starting OAuth2 callback
+2025-09-30 17:44:59,764 - INFO - HTTP Request: POST https://app.posthog.com/capture/ "HTTP/1.1 200 OK"
+2025-09-30 17:53:39,031 - INFO - Starting OAuth2 callback
+2025-09-30 17:53:40,864 - INFO - Starting OAuth2 callback
+2025-09-30 17:54:02,482 - INFO - Starting OAuth2 callback
+2025-09-30 17:54:11,247 - INFO - Starting OAuth2 callback
+2025-09-30 17:54:26,873 - INFO - Starting OAuth2 callback
+2025-09-30 17:55:51,181 - INFO - Starting OAuth2 callback
+2025-09-30 17:56:04,384 - INFO - Starting OAuth2 callback
+2025-09-30 17:56:09,783 - INFO - Starting OAuth2 callback
+2025-09-30 17:56:17,228 - INFO - Starting OAuth2 callback
+2025-09-30 17:56:30,500 - INFO - Starting OAuth2 callback
+2025-09-30 17:56:38,337 - INFO - Starting OAuth2 callback
+2025-09-30 17:56:44,446 - INFO - Starting OAuth2 callback
+2025-09-30 18:11:27,080 - INFO - Starting OAuth2 callback
+2025-09-30 18:11:35,318 - INFO - Starting OAuth2 callback
+2025-09-30 18:11:43,327 - INFO - Starting OAuth2 callback
+2025-09-30 18:14:21,401 - INFO - Starting OAuth2 callback
+2025-09-30 18:15:02,926 - INFO - Starting OAuth2 callback
+2025-09-30 18:15:36,888 - INFO - Starting OAuth2 callback
+2025-09-30 18:15:40,953 - INFO - Starting OAuth2 callback

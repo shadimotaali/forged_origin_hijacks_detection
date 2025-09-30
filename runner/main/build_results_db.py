@@ -39,7 +39,9 @@ def create_tables():
             is_origin_rpki_valid BOOLEAN NOT NULL,
             is_recurrent BOOLEAN NOT NULL,
             observed_at TIMESTAMP NOT NULL,
-            is_local BOOLEAN NOT NULL
+            is_local BOOLEAN NOT NULL,
+            operator_validation SMALLINT,
+            operator_feedback TEXT
         );
     """)
 
