@@ -98,7 +98,7 @@ def get_new_links(pg_helper :connection,
                   new_link_ids :list[int]):
 
 
-    query = "SELECT id, observed_at, asn1, asn2, attackers, victims, classification, confidence_level, num_paths, is_reccurent FROM inference_summary"
+    query = "SELECT id, observed_at, asn1, asn2, attackers, victims, classification, confidence_level, num_paths, is_reccurent, user_feedback, user_comment, authorize_others FROM inference_summary"
 
     conditions = _build_conditions(asn=asn,
                                    attackers=attackers,
@@ -124,7 +124,7 @@ def get_new_links(pg_helper :connection,
 
     results :list[dict[str, int | str | list[int]]] = dict()
 
-    for id, observed_at, asn1, asn2, attackers, victims, classification, confidence_level, num_paths, is_reccurent in res:
+    for id, observed_at, asn1, asn2, attackers, victims, classification, confidence_level, num_paths, is_reccurent, user_feedback, user_comment, authorize_others in res:
         case_ = dict()
     
         case_["id"] = id
@@ -137,6 +137,10 @@ def get_new_links(pg_helper :connection,
         case_["confidence_level"] = confidence_level
         case_["nb_aspaths_observed"] = num_paths
         case_["is_reccurent"] = is_reccurent
+
+        if user_feedback and authorize_others:
+            case_["operator_feedback"] = user_feedback
+            case_["operator_comment"] = user_comment
 
         results.append(case_)
 

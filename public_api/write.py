@@ -32,7 +32,8 @@ def execute_write_query(conn :connection, query):
 def operator_feedback(pg_helper :connection,
                       new_link_id :int, 
                       decision :int, 
-                      feedback :str):
+                      feedback :str,
+                      authorize_others :bool):
     
     query = "SELECT count(*) FROM inference_summary WHERE id = {};".format(new_link_id)
 
@@ -44,8 +45,7 @@ def operator_feedback(pg_helper :connection,
     if not int(res[0][0]):
         return {"code": 400, "detail": "Unable to find new link with ID {} in the database.".format(new_link_id)}
     
-    query = "UPDATE inference_summary SET operator_validation = {}, operator_feedback = '{}' WHERE id = {};".format(decision, feedback, new_link_id)
-    print(query)
+    query = "UPDATE inference_summary SET operator_validation = {}, operator_feedback = '{}', authorize_others = {} WHERE id = {};".format(decision, feedback, authorize_others, new_link_id)
 
     ok = execute_write_query(pg_helper, query)
 

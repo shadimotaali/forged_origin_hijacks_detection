@@ -230,6 +230,7 @@ class DFOHExternalAPI:
                                new_link_id :int=Query(..., description="Identifier of the link for which we want to give feedback."),
                                decision :str=Query(..., description="Simple feedback of the operator. The value be either 'legitimate', 'suspicious', or 'unknown'."),
                                feedback :str=Query(None, description="Extended comment of the operator regarding the new link case."),
+                               authorize_others :bool=Query(..., description="Tells if we authorize the feedback to be seen by other users."),
                                api_key :str=Query(..., description="Mandatory API key. Enables to use this endpoint only from the website.")):
         
         if api_key != os.environ.get("SECURED_WRITE_API_KEY"):
@@ -240,7 +241,7 @@ class DFOHExternalAPI:
         if parsed_decision is None:
             raise HTTPException(status_code=400, detail="Parameter 'decision' must be a string value among 'legitimate', 'suspicious', or 'unknown'. Value '{}' is not valid.".format(decision))
         
-        result = operator_feedback(self.pg_helper, new_link_id, parsed_decision, feedback)
+        result = operator_feedback(self.pg_helper, new_link_id, parsed_decision, feedback, authorize_others)
 
         if result["code"] != 200:
             raise HTTPException(status_code=result["code"], detail=result["detail"])
