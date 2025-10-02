@@ -41,8 +41,8 @@ Returns a list of link summaries, each containing:
 | `min_confidence_level`  | int        | Minimum confidence score (0–5).                                                                       |
 | `nb_max_aspaths`        | int        | Maximum number of observed AS paths.                                                                  |
 | `nb_min_aspaths`        | int        | Minimum number of observed AS paths.                                                                  |
-| `start_time`            | string     | Minimum observation time. Format: `YYYY-MM-DDTHH:MM:SS`. Defaults to today if not set.                 |
-| `stop_time`             | string     | Maximum observation time. Format: `YYYY-MM-DDTHH:MM:SS`. Defaults to same as `start_time` if not set. |
+| `start_time`            | string     | Minimum observation time. Format: `YYYY-MM-DDTHH:MM`. Defaults to today if not set.                 |
+| `stop_time`             | string     | Maximum observation time. Format: `YYYY-MM-DDTHH:MM`. Defaults to same as `start_time` if not set. |
 | `new_link_ids`          | string     | Comma-separated list of specific link IDs to query.                                                   |
 
 ---
@@ -50,7 +50,7 @@ Returns a list of link summaries, each containing:
 **Example request:**
 
 ```bash
-curl "http://127.0.0.1:5555/new_links?asn=3356,174&inference_result=suspicious&min_confidence_level=3&start_time=2023-01-01T00:00:00"
+curl "http://127.0.0.1:5555/new_links?asn=3356,174&inference_result=suspicious&min_confidence_level=3&start_time=2023-01-01T00:00"
 ```
 
 ---
@@ -64,7 +64,7 @@ Each inference ID corresponds to a set of observed paths and prefixes.
 
 Returns a dictionary keyed by link ID. Each entry is a list of tuples:
 
-* `observed_at`: Timestamp (`YYYY-MM-DD HH:MM:SS`)  
+* `observed_at`: Timestamp (`YYYY-MM-DD HH:MM`)  
 * `asn1`, `asn2`: The AS link involved  
 * `peer_asn`: ASN of vantage point peer  
 * `peer_ip`: IP address of vantage point peer  
@@ -132,7 +132,7 @@ curl "http://127.0.0.1:5555/operator_feedback?new_link_id=123&decision=suspiciou
 ## 📦 Notes
 
 * List parameters (`asn`, `attackers`, etc.) must contain **only integers** and are comma-separated.  
-* Time parameters must be in ISO format: `YYYY-MM-DDTHH:MM:SS`.  
+* Time parameters must be in ISO format: `YYYY-MM-DDTHH:MM`.  
 * `inference_result` is **human-readable** (`legitimate`/`suspicious`) instead of old `classification=leg/sus`.  
 * Operator feedback endpoint is **write-protected** with an API key.  
 * Default time range is **today** if `start_time`/`stop_time` are not specified.  
