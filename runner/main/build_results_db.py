@@ -42,7 +42,8 @@ def create_tables():
             is_local BOOLEAN NOT NULL,
             operator_validation SMALLINT,
             operator_feedback TEXT,
-            authorize_others BOOLEAN DEFAULT false
+            authorize_others BOOLEAN DEFAULT false,
+            grant_feedback_use BOOLEAN DEFAULT false
         );
     """)
 

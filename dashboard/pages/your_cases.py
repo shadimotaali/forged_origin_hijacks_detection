@@ -187,30 +187,31 @@ class OperatorFeedbackState(rx.State):
 
     show_modal: bool = False
     current_case_id: Optional[int] = None
-    decision: Optional[str] = None   # "legitimate" or "suspicious"
+    decision: Optional[str] = None   # "legitimate", "suspicious", or "unknown"
     feedback_text: str = ""
-    authorize_others: bool = True    # ✅ new field, checked by default
+    authorize_others: bool = True     # ✅ default checked
+    grant_feedback_use: bool = False  # ✅ default unchecked
 
     # -----------------------------
     # Modal helpers
     # -----------------------------
     @rx.event
     def open_modal(self, case_id: int):
-        """Open modal for a given case."""
         self.show_modal = True
         self.current_case_id = case_id
         self.decision = None
         self.feedback_text = ""
-        self.authorize_others = True   # reset default when opening
+        self.authorize_others = True
+        self.grant_feedback_use = False   # reset to default
 
     @rx.event
     def close_modal(self):
-        """Close modal and reset state."""
         self.show_modal = False
         self.current_case_id = None
         self.decision = None
         self.feedback_text = ""
-        self.authorize_others = True   # reset default when opening
+        self.authorize_others = True
+        self.grant_feedback_use = False
 
     # -----------------------------
     # Field setters
@@ -226,6 +227,10 @@ class OperatorFeedbackState(rx.State):
     @rx.event
     def toggle_authorize(self, value: bool):
         self.authorize_others = value
+
+    @rx.event
+    def toggle_feedback_use(self, value: bool):
+        self.grant_feedback_use = value
 
     # -----------------------------
     # API submission
@@ -243,7 +248,8 @@ class OperatorFeedbackState(rx.State):
                     "new_link_id": self.current_case_id,
                     "decision": self.decision,
                     "feedback": self.feedback_text,
-                    "authorize_others": "true" if self.authorize_others else "false", 
+                    "authorize_others": "true" if self.authorize_others else "false",
+                    "grant_feedback_use": "true" if self.grant_feedback_use else "false",
                     "api_key": os.environ.get("SECURED_WRITE_API_KEY"),
                 },
                 timeout=10,
@@ -469,6 +475,11 @@ def operator_feedback_modal() -> rx.Component:
                     "Authorize other operators to see my feedback",
                     checked=OperatorFeedbackState.authorize_others,
                     on_change=OperatorFeedbackState.toggle_authorize,
+                ),
+                rx.checkbox(
+                    "Authorize my feedback to be used anonymously",
+                    checked=OperatorFeedbackState.grant_feedback_use,
+                    on_change=OperatorFeedbackState.toggle_feedback_use,
                 ),
                 rx.button(
                     "Submit",

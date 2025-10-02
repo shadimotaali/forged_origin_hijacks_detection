@@ -1,94 +1,201 @@
----
-
 # Forged Origin Hijack Detection API
 
-This API provides access to **DFOH** inference data. Users can query historical events using a variety of filters such as AS numbers, prefix criteria, RPKI validation status, and more.
+This API provides access to **DFOH** inference data.  
+It enables querying suspicious/legitimate BGP link inferences, retrieving detailed per-observation data, and submitting operator feedback.
 
 ---
 
-## 🚀 API Endpoint
+## 🚀 API Endpoints
 
-### `GET /forged_origin_hijacks`
+### `GET /new_links`
 
-Retrieve forged origin hijack events that match specific query filters.
+Retrieve a list of **new links** (potential hijack cases) that match specific filters.
 
 #### ✅ Successful Response
 
-Returns a list of hijack `Inference` objects.
+Returns a list of link summaries, each containing:
 
-Each object contains:
-
-* `date`: Date of the hijack event (format: `YYYY-MM-DD`)
-* `link`: AS link involved (`"asn1 asn2"`)
-* `num_paths`: Number of distinct AS paths observed
-* `classification`: `"leg"` or `"sus"` (legitimate vs. suspicious)
-* `confidence`: Integer confidence score (e.g., 90)
-* `new_links`: List of observations including:
-
-  * `observed_at`: Timestamp (string)
-  * `prefix`: Affected prefix (CIDR notation)
-  * `as_path`: Full AS path
-  * `vantage_point`: `"peer_asn peer_ip"`
+* `id`: Unique link identifier  
+* `date`: Observation timestamp (`YYYY-MM-DD HH:MM:SS`)  
+* `as1`: First ASN of the link  
+* `as2`: Second ASN of the link  
+* `presumed_attacker`: List of suspected attacker ASNs  
+* `presumed_victims`: List of suspected victim ASNs  
+* `inference_result`: `"legitimate"`, `"suspicious"`, or `"unknown"`  
+* `confidence_level`: Confidence score (0–5)  
+* `nb_aspaths_observed`: Number of distinct AS paths observed  
+* `is_reccurent`: `true`/`false` (whether the new edge is recurrent)  
+* `operator_feedback` (optional): Human feedback text (if provided and authorized)  
+* `operator_comment` (optional): Extended operator comment  
 
 ---
 
-## 🔍 Query Parameters
+#### 🔍 Query Parameters
 
-You can use one or more of the following query parameters:
+| Parameter               | Type       | Description                                                                                           |
+| ----------------------- | ---------- | ----------------------------------------------------------------------------------------------------- |
+| `asn`                   | string     | Comma-separated list of ASNs. Matches either end of the link.                                         |
+| `attackers`             | string     | Comma-separated ASNs suspected as attackers.                                                          |
+| `victims`               | string     | Comma-separated ASNs suspected as victims.                                                            |
+| `inference_result`      | string     | `"legitimate"` or `"suspicious"`. Filters by inferred legitimacy.                                      |
+| `min_confidence_level`  | int        | Minimum confidence score (0–5).                                                                       |
+| `nb_max_aspaths`        | int        | Maximum number of observed AS paths.                                                                  |
+| `nb_min_aspaths`        | int        | Minimum number of observed AS paths.                                                                  |
+| `start_time`            | string     | Minimum observation time. Format: `YYYY-MM-DDTHH:MM:SS`. Defaults to today if not set.                 |
+| `stop_time`             | string     | Maximum observation time. Format: `YYYY-MM-DDTHH:MM:SS`. Defaults to same as `start_time` if not set. |
+| `new_link_ids`          | string     | Comma-separated list of specific link IDs to query.                                                   |
 
-| Parameter              | Type       | Description                                                                                                                 |
-| ---------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `asn`                  | string     | Comma-separated ASNs. Matches either end of the AS link. Max 10.                                                            |
-| `attackers`            | string     | Comma-separated list of suspected attacker ASNs. Matches any involved. Max 10.                                              |
-| `victims`              | string     | Comma-separated list of victim ASNs. Matches any involved. Max 10.                                                          |
-| `classification`       | string     | One of: `leg`, `sus`. Filters by inferred legitimacy.                                                                       |
-| `hijack_type`          | int        | Hijack type code (integer).                                                                                                 |
-| `is_origin_rpki_valid` | bool (str) | `true` or `false`. Whether origin is RPKI-valid.                                                                            |
-| `is_local`             | bool (str) | `true` or `false`. Whether hijack is a local case, i.e., observed by a VP in the attacker's AS (thus likely not a hijack)   |
-| `is_recurrent`         | bool (str) | `true` or `false`. Whether new edge is reccurent                                                                            |
-| `prefixes`             | string     | Comma-separated list of CIDR prefixes. Match behavior depends on `prefix_match_type`. Max 10.                               |
-| `prefix_match_type`    | string     | One of: `exact`, `more_specific`, `less_specific`. Default is `exact`.                                                      |
-| `peer_ips`             | string     | Comma-separated IPs of observation vantage points. Max 10.                                                                  |
-| `peer_asns`            | string     | Comma-separated ASNs of peer vantage points. Max 10.                                                                        |
-| `before_datetime`      | string     | Format: `YYYY-MM-DD`. Only include events observed **before** this date.                                                    |
-| `after_datetime`       | string     | Format: `YYYY-MM-DD`. Only include events observed **after** this date.                                                     |
-| `path_contains`        | string     | Comma-separated ASNs. Matches any AS that appears in the AS path. Max 10.                                                   |
+---
 
 **Example request:**
 
-```http
-GET /forged_origin_hijacks?asn=3356,174&classification=sus&is_origin_rpki_valid=false&after_datetime=2023-01-01
+```bash
+curl "http://127.0.0.1:5555/new_links?asn=3356,174&inference_result=suspicious&min_confidence_level=3&start_time=2023-01-01T00:00:00"
 ```
 
 ---
 
-## 📦 Response Schema
+### `GET /inference_details`
+
+Retrieve detailed per-observation information for given link IDs.  
+Each inference ID corresponds to a set of observed paths and prefixes.
+
+#### ✅ Successful Response
+
+Returns a dictionary keyed by link ID. Each entry is a list of tuples:
+
+* `observed_at`: Timestamp (`YYYY-MM-DD HH:MM:SS`)  
+* `asn1`, `asn2`: The AS link involved  
+* `peer_asn`: ASN of vantage point peer  
+* `peer_ip`: IP address of vantage point peer  
+* `as_path`: Observed AS path  
+* `prefix`: Observed prefix  
+* `inference_result`: `"legitimate"`, `"suspicious"`, or `"unknown"`  
+* `confidence_level`: Confidence score (0–5)  
+* `asp_tags`: (reserved, list of AS-path tags – currently empty)  
+* `pfx_tags`: List of prefix tags (`"RPKI valid"`, `"RPKI invalid"`, `"Origin invalid"`)  
+
+---
+
+#### 🔍 Query Parameters
+
+| Parameter       | Type   | Description                                                                                 |
+| --------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `new_link_ids`  | string | **Required.** Comma-separated list of link IDs. Maximum 100 IDs.                            |
+
+---
+
+**Example request:**
+
+```bash
+curl "http://127.0.0.1:5555/inference_details?new_link_ids=123,456,789"
+```
+
+---
+
+### `GET /operator_feedback`
+
+Submit operator feedback about a specific new link.
+
+#### ✅ Successful Response
 
 ```json
-[
-  {
-    "date": "2023-06-15",
-    "link": "2914 174",
-    "num_paths": 2,
-    "classification": "sus",
-    "confidence": 8,
-    "new_links": [
-      {
-        "observed_at": "2023-06-15 12:05:30",
-        "prefix": "203.0.113.0/24",
-        "as_path": "6939 2914 174",
-        "vantage_point": "64500 192.0.2.1"
-      },
-      ...
-    ]
-  }
-]
+{
+  "code": 200,
+  "detail": "Operator feedback correctly added."
+}
 ```
 
 ---
 
-## 🧪 Notes
+#### 🔍 Query Parameters
 
-* Query lists (e.g., `asn`, `prefixes`) are limited to **10 items** for performance and safety.
-* Prefix matching uses PostgreSQL's `inet` type operators: `=`, `<<=`, `>>=`.
-* Invalid input raises 400 errors with detailed messages.
+| Parameter            | Type   | Description                                                                                  |
+| -------------------- | ------ | -------------------------------------------------------------------------------------------- |
+| `new_link_id`        | int    | Identifier of the link to annotate.                                                          |
+| `decision`           | string | Operator classification: `"legitimate"`, `"suspicious"`, or `"unknown"`.                     |
+| `feedback`           | string | Optional extended operator comment.                                                          |
+| `authorize_others`   | bool   | If `true`, feedback is visible to other users.                                               |
+| `grant_feedback_use` | bool   | If `true`, feedback may be used for measurement/analysis.                                     |
+| `api_key`            | string | **Required.** API key (must match environment variable `SECURED_WRITE_API_KEY`).             |
+
+---
+
+**Example request:**
+
+```bash
+curl "http://127.0.0.1:5555/operator_feedback?new_link_id=123&decision=suspicious&feedback=Confirmed+by+manual+check&authorize_others=true&grant_feedback_use=true&api_key=MY_SECRET_KEY"
+```
+
+---
+
+## 📦 Notes
+
+* List parameters (`asn`, `attackers`, etc.) must contain **only integers** and are comma-separated.  
+* Time parameters must be in ISO format: `YYYY-MM-DDTHH:MM:SS`.  
+* `inference_result` is **human-readable** (`legitimate`/`suspicious`) instead of old `classification=leg/sus`.  
+* Operator feedback endpoint is **write-protected** with an API key.  
+* Default time range is **today** if `start_time`/`stop_time` are not specified.  
+* `confidence_level` is scaled **0–5** (not 0–100 as in the old API).  
+
+
+---
+
+## 🛠 Running the API
+
+The API is implemented with **FastAPI** and **Uvicorn**, and requires access to a PostgreSQL database.
+
+### 1. Environment Variables
+
+Before running, make sure to set the following environment variables:
+
+```bash
+export DB_NAME="your_database_name"
+export DB_USER="your_database_user"
+export DB_PASSWORD="your_database_password"
+export DB_HOST="your_database_host"
+export DB_PORT="5432"
+
+# Required for /operator_feedback endpoint
+export SECURED_WRITE_API_KEY="your_secret_api_key"
+```
+
+### 2. Install dependencies
+
+We recommend using a virtual environment:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Typical dependencies include:
+
+- fastapi
+- uvicorn
+- psycopg2
+
+### 3. Run the API
+
+You can start the API directly using Python:
+
+```bash
+python -m api.py
+```
+
+Or run via Uvicorn manually:
+
+```bash
+uvicorn api:DFOHExternalAPI().app --host 0.0.0.0 --port 5555
+```
+
+By default, the API listens on **http://127.0.0.1:5555**.
+
+### 4. Test the API
+
+Once running, you can test endpoints with curl, for example:
+
+```bash
+curl "http://127.0.0.1:5555/new_links?asn=3356&inference_result=suspicious"
+```

@@ -159,7 +159,7 @@ class DFOHExternalAPI:
             start_time_val = start_time.split("T")[0]
 
             if start_time_val == -1:
-                raise HTTPException(status_code=404, detail="Parameter 'start_time' must be a date in ISO format (YYYY-MM-DDTHH:MM:SS). Value '{}' is not valid.".format(start_time))
+                raise HTTPException(status_code=404, detail="Parameter 'start_time' must be a date in ISO format (YYYY-MM-DDTHH:MM). Value '{}' is not valid.".format(start_time))
         else:
             start_time_val = datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d")
 
@@ -168,7 +168,7 @@ class DFOHExternalAPI:
             stop_time_val = stop_time.split("T")[0]
 
             if stop_time_val == -1:
-                raise HTTPException(status_code=404, detail="Parameter 'stop_time' must be a date in ISO format (YYYY-MM-DDTHH:MM:SS). Value '{}' is not valid.".format(stop_time))
+                raise HTTPException(status_code=404, detail="Parameter 'stop_time' must be a date in ISO format (YYYY-MM-DDTHH:MM). Value '{}' is not valid.".format(stop_time))
         else:
             stop_time_val = start_time_val
 
@@ -231,6 +231,7 @@ class DFOHExternalAPI:
                                decision :str=Query(..., description="Simple feedback of the operator. The value be either 'legitimate', 'suspicious', or 'unknown'."),
                                feedback :str=Query(None, description="Extended comment of the operator regarding the new link case."),
                                authorize_others :bool=Query(..., description="Tells if we authorize the feedback to be seen by other users."),
+                               grant_feedback_use :bool=Query(..., description="Tells if we ar granted to use this feedback to perform some measureent anlysis."),
                                api_key :str=Query(..., description="Mandatory API key. Enables to use this endpoint only from the website.")):
         
         if api_key != os.environ.get("SECURED_WRITE_API_KEY"):
@@ -241,7 +242,7 @@ class DFOHExternalAPI:
         if parsed_decision is None:
             raise HTTPException(status_code=400, detail="Parameter 'decision' must be a string value among 'legitimate', 'suspicious', or 'unknown'. Value '{}' is not valid.".format(decision))
         
-        result = operator_feedback(self.pg_helper, new_link_id, parsed_decision, feedback, authorize_others)
+        result = operator_feedback(self.pg_helper, new_link_id, parsed_decision, feedback, authorize_others, grant_feedback_use)
 
         if result["code"] != 200:
             raise HTTPException(status_code=result["code"], detail=result["detail"])
