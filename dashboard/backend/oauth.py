@@ -20,7 +20,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("/Users/thomasalfroy/Documents/forged_origin_hijacks_detection/dashboard/logs.log", mode='a', encoding='utf-8'),
+        logging.FileHandler("/tmp/logs.log", mode='a', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )

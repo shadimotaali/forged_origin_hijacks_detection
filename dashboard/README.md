@@ -1,6 +1,7 @@
 # 🛰️ DFOH Dashboard
 
-The **DFOH Dashboard** is a web application for visualizing and analyzing BGP (Border Gateway Protocol) anomalies. It provides authenticated operator access, filters for custom queries, and interactive feedback features.  
+The **DFOH Dashboard** is a web application that enables users to visualize and analyze DFOH inferences, either through a global view (cases across all ASes) or a local view (cases related to a specific AS).
+It provides authenticated operator access, filters for custom queries, and interactive feedback features.  
 
 The dashboard is available publicly at **[https://dfoh.uclouvain.be](https://dfoh.uclouvain.be)**, but you can also run it locally for development, testing, or private deployments.  
 
@@ -22,7 +23,7 @@ The dashboard is available publicly at **[https://dfoh.uclouvain.be](https://dfo
 - [virtualenv](https://virtualenv.pypa.io/) or another Python environment manager (recommended)  
 - A **PeeringDB account** (for OAuth authentication)  
 - An API key for writing operator feedback (from your DFOH API deployment or the default `dfoh-api.bgproutes.io`)  
-
+- The DFOH [API](https://github.com/bgproutes-io/forged_origin_hijacks_detection/blob/main/public_api/README.md) must be running, as the dashboard relies on it to fetch DFOH inferences.
 ---
 
 ## 📦 Installation

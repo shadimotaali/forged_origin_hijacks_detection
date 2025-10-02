@@ -13,7 +13,7 @@ def documentation() -> rx.Component:
     return rx.fragment(
         navbar(),
         rx.box(
-            rx.heading("Documentation", size="7", mb="4"),
+            # rx.heading("Documentation", size="7", mb="4"),
             documentation_page(),
             width="100%",
             padding_x=["1rem","2rem","3rem","3rem"],

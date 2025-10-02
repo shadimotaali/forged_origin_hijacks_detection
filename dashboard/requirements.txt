@@ -1,2 +1,5 @@
 jwt
+dotenv
+PyYAML
+requests
 reflex==0.8.12

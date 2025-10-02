@@ -4,7 +4,7 @@ def footer() -> rx.Component:
     return rx.box(
         rx.divider(),
         rx.hstack(
-            rx.text("Funded by", size="2", weight="medium"),
+            rx.text("Dashboard funded by", size="2", weight="medium"),
             rx.link(
                 rx.image(
                     src="/banner.png",   # 👈 local copy
