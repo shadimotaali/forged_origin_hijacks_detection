@@ -1,5 +1,5 @@
-jwt
+PyJWT==2.10.1
 dotenv
-PyYAML
-requests
+PyYAML==6.0.2
+requests==2.32.3
 reflex==0.8.12
