@@ -64,4 +64,5 @@ venv
 dashboard/.env
 dashboard/__pycache__
 dashboard/*/__pycache__
+dashboard/logs.log
 

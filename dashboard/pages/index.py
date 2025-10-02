@@ -4,8 +4,11 @@ from components.footer import footer
 from backend.oauth import AuthState
 import requests
 from typing import List, Tuple, Optional
+import os
 
 
+
+api_base_url = os.environ.get("API_URL", "https://dfoh-api.bgproutes.io")
 
 DECISION_LEGITIMATE = 1
 DECISION_MALICIOUS  = 2
@@ -139,7 +142,7 @@ class NewLinksState(rx.State):
 
             # --- Call API with parameters ---
             resp = requests.get(
-                "https://dfoh-api.bgproutes.io/new_links",
+                "{}/new_links".format(api_base_url),
                 params=params,
                 timeout=10,
             )

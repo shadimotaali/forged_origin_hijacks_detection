@@ -12,6 +12,9 @@ import os
 CARD_RADIUS = "12px"
 
 
+api_base_url = os.environ.get("API_URL", "https://dfoh-api.bgproutes.io")
+
+
 # -----------------------------
 # Helpers
 # -----------------------------
@@ -119,7 +122,7 @@ class YourCasesState(rx.State):
                 "show_private_asn": True,
             }
             resp = requests.get(
-                "https://dfoh-api.bgproutes.io/new_links",
+                "{}/new_links".format(api_base_url),
                 params=params,
                 timeout=10,
             )
@@ -243,7 +246,7 @@ class OperatorFeedbackState(rx.State):
 
         try:
             resp = requests.get(
-                "https://dfoh-api.bgproutes.io/operator_feedback",
+                "{}/operator_feedback".format(api_base_url),
                 params={
                     "new_link_id": self.current_case_id,
                     "decision": self.decision,
