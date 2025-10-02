@@ -244,3 +244,14 @@ This library was developed with the support of the following organizations and f
 	•	University of Strasbourg
 	•	University of Haute-Alsace
 - A research grant from the Cisco University Research Program Fund, an advised fund of the Silicon Valley Community Foundation.
+
+---
+
+## Licence
+
+This repository is licensed under the GNU General Public License v3 (GPLv3).
+
+This project makes use of Reflex, which is open source software licensed under the Apache License, Version 2.0.
+
+You may obtain a copy of the Apache 2.0 license at:
+http://www.apache.org/licenses/LICENSE-2.0
