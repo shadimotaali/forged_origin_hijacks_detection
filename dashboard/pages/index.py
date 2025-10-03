@@ -4,6 +4,7 @@ from components.footer import footer
 from backend.oauth import AuthState
 import requests
 from typing import List, Tuple, Optional
+from datetime import datetime, timezone, timedelta
 import os
 
 
@@ -17,13 +18,13 @@ DECISION_UNKNOWN    = 3
 
 def parse_decision(decision :int):
     if decision == DECISION_LEGITIMATE:
-        return "legitimate"
+        return "Legitimate"
     
     elif decision == DECISION_MALICIOUS:
-        return "malicious"
+        return "Malicious"
     
     elif decision == DECISION_UNKNOWN:
-        return "unknown"
+        return "Interesting"
     
     return ""
 
@@ -102,6 +103,16 @@ class NewLinksState(rx.State):
     # --- Pagination ---
     page_number: int = 1
     rows_per_page: int = 50
+
+
+    # --------------------
+    # Init time window
+    # --------------------
+    @rx.event
+    def init_time_window(self):
+        now_utc = datetime.now(timezone.utc)
+        self.end_dt_local = now_utc.strftime("%Y-%m-%dT%H:%M")
+        self.start_dt_local = (now_utc - timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M")
 
     # --------------------
     # Data loading
@@ -591,7 +602,7 @@ def new_links_table() -> rx.Component:
                     rx.table.column_header_cell("Presumed Attacker", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Presumed Victims", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Inference", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Observed Paths", style={"verticalAlign": "middle"}),
+                    rx.table.column_header_cell("# Paths", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Recurrent", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Details", style={"verticalAlign": "middle"}),
                     rx.table.column_header_cell("Feedback", style={"verticalAlign": "middle"}),
@@ -685,7 +696,7 @@ def new_links_table() -> rx.Component:
 
 
 
-@rx.page(on_load=[NewLinksState.load_links, AuthState.oauth2_callback], route="/")
+@rx.page(on_load=[NewLinksState.init_time_window, NewLinksState.load_links, AuthState.oauth2_callback], route="/")
 def index() -> rx.Component:
     return rx.box(
         navbar(),

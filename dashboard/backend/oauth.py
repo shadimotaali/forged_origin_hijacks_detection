@@ -86,11 +86,11 @@ class AuthState(rx.State):
         # self.asns = ['2914', '4128', '3927'] 
         # self.asns_info = [['4128', 'rgnet1'], ['3927', 'rgnet2'], ['3130', 'rgnet3']]
         # self.asns = ['4128', '3927', '3130'] 
-        self.asns_info = [['2914', 'rgnet1']]
-        self.asns = ['263444'] 
+        # self.asns_info = [['2914', 'rgnet1']]
+        # self.asns = ['205689'] 
         
-        self.is_authenticated = True
-        return
+        # self.is_authenticated = True
+        # return
 
 
         """Cookie handler."""

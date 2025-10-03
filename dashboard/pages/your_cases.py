@@ -14,6 +14,10 @@ CARD_RADIUS = "12px"
 
 api_base_url = os.environ.get("API_URL", "https://dfoh-api.bgproutes.io")
 
+DECISION_LEGITIMATE = 1
+DECISION_MALICIOUS = 2
+DECISION_UNKNOWN = 3
+
 
 # -----------------------------
 # Helpers
@@ -50,28 +54,54 @@ def is_not_connected() -> rx.Component:
     )
 
 
+def parse_decision(decision: int):
+    if decision == DECISION_LEGITIMATE:
+        return "Legitimate"
+    elif decision == DECISION_MALICIOUS:
+        return "Malicious"
+    elif decision == DECISION_UNKNOWN:
+        return "Interesting"
+    return ""
+
+
 def case_is_correct(case_: dict[str, str | int | list[str]]):
-    """Validate and normalize a case object."""
     required = [
-        "date", "as1", "as2", "presumed_attacker", "presumed_victims",
-        "inference_result", "confidence_level", "nb_aspaths_observed",
-        "is_reccurent", "id"
+        "date",
+        "as1",
+        "as2",
+        "presumed_attacker",
+        "presumed_victims",
+        "inference_result",
+        "confidence_level",
+        "nb_aspaths_observed",
+        "is_reccurent",
+        "id",
     ]
+
     for k in required:
         if k not in case_:
             return False, None
 
+    feedback = ""
+    comment = ""
+
+    if "operator_feedback" in case_ and "operator_comment" in case_:
+        feedback = parse_decision(int(case_["operator_feedback"]))
+        comment = str(case_["operator_comment"])
+
     return True, (
-        case_["date"].replace("T", " "),
-        str(case_["as1"]),
-        str(case_["as2"]),
-        [str(x) for x in case_["presumed_attacker"]],
-        [str(x) for x in case_["presumed_victims"]],
-        str(case_["inference_result"]),
-        int(case_["confidence_level"]),
-        int(case_["nb_aspaths_observed"]),
-        bool(case_["is_reccurent"]),
-        int(case_["id"]),
+        case_["date"].replace("T", " "),  # 0 date
+        str(case_["as1"]),  # 1 as1
+        str(case_["as2"]),  # 2 as2
+        [str(x) for x in case_["presumed_attacker"]],  # 3 attackers
+        [str(x) for x in case_["presumed_victims"]],  # 4 victims
+        str(case_["inference_result"]),  # 5 inference_result
+        int(case_["confidence_level"]),  # 6 confidence
+        int(case_["nb_aspaths_observed"]),  # 7 nb paths
+        bool(case_["is_reccurent"]),  # 8 recurrent
+        int(case_["id"]),  # 9 id
+        str(feedback),  # 10 feedback
+        str(comment),  # 11 comment
     )
 
 
@@ -81,7 +111,9 @@ def case_is_correct(case_: dict[str, str | int | list[str]]):
 class YourCasesState(rx.State):
     """Holds the state for the 'Your Cases' page."""
 
-    links: List[Tuple[str, str, str, List[str], List[str], str, int, int, bool, int]] = []
+    links: List[
+        Tuple[str, str, str, List[str], List[str], str, int, int, bool, int, str, str]
+    ] = []
     loading: bool = False
     error: Optional[str] = None
 
@@ -94,6 +126,15 @@ class YourCasesState(rx.State):
     page_number: int = 1
     rows_per_page: int = 50
     asns: list[str] = list()
+
+    # --------------------
+    # Init time window
+    # --------------------
+    @rx.event
+    def init_time_window(self):
+        now_utc = datetime.now(timezone.utc)
+        self.end_dt_local = now_utc.strftime("%Y-%m-%dT%H:%M")
+        self.start_dt_local = (now_utc - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M")
 
     # ---- API call ----
     @rx.event(background=True)
@@ -122,7 +163,7 @@ class YourCasesState(rx.State):
                 "show_private_asn": True,
             }
             resp = requests.get(
-                "{}/new_links".format(api_base_url),
+                f"{api_base_url}/new_links",
                 params=params,
                 timeout=10,
             )
@@ -132,7 +173,13 @@ class YourCasesState(rx.State):
             print(f"Error fetching data: {e}")
             data = []
 
-        parsed = [val for case_ in data if (ok := case_is_correct(case_))[0] for val in [ok[1]] if val]
+        parsed = [
+            val
+            for case_ in data
+            if (ok := case_is_correct(case_))[0]
+            for val in [ok[1]]
+            if val
+        ]
 
         async with self:
             self.links = sorted(parsed, key=lambda x: x[0], reverse=True)
@@ -155,7 +202,9 @@ class YourCasesState(rx.State):
         return (len(self.links) + self.rows_per_page - 1) // self.rows_per_page or 1
 
     @rx.var
-    def get_current_page(self) -> List[Tuple[str, str, str, List[str], List[str], str, int, int, bool, int]]:
+    def get_current_page(
+        self,
+    ) -> List[Tuple[str, str, str, List[str], List[str], str, int, int, bool, int, str, str]]:
         start = (self.page_number - 1) * self.rows_per_page
         end = start + self.rows_per_page
         return self.links[start:end]
@@ -190,10 +239,10 @@ class OperatorFeedbackState(rx.State):
 
     show_modal: bool = False
     current_case_id: Optional[int] = None
-    decision: Optional[str] = None   # "legitimate", "suspicious", or "unknown"
+    decision: Optional[str] = None
     feedback_text: str = ""
-    authorize_others: bool = True     # ✅ default checked
-    grant_feedback_use: bool = False  # ✅ default unchecked
+    authorize_others: bool = True
+    grant_feedback_use: bool = True
 
     # -----------------------------
     # Modal helpers
@@ -205,7 +254,7 @@ class OperatorFeedbackState(rx.State):
         self.decision = None
         self.feedback_text = ""
         self.authorize_others = True
-        self.grant_feedback_use = False   # reset to default
+        self.grant_feedback_use = True
 
     @rx.event
     def close_modal(self):
@@ -214,7 +263,7 @@ class OperatorFeedbackState(rx.State):
         self.decision = None
         self.feedback_text = ""
         self.authorize_others = True
-        self.grant_feedback_use = False
+        self.grant_feedback_use = True
 
     # -----------------------------
     # Field setters
@@ -242,11 +291,11 @@ class OperatorFeedbackState(rx.State):
     async def submit_feedback(self):
         """Send operator feedback to the API."""
         if not self.current_case_id or not self.decision:
-            return rx.toast.error("Please choose validate/contest first")
+            return rx.toast.error("You need to select a decision")   # ✅ clearer message
 
         try:
             resp = requests.get(
-                "{}/operator_feedback".format(api_base_url),
+                f"{api_base_url}/operator_feedback",
                 params={
                     "new_link_id": self.current_case_id,
                     "decision": self.decision,
@@ -327,6 +376,79 @@ def _victim_cell(values: List[str]) -> rx.Component:
     )
 
 
+
+
+def _your_feedback_cell(feedback: rx.Var[str], comment: rx.Var[str]) -> rx.Component:
+    """Show colored rectangle with decision text and click-to-open comment box."""
+    return rx.table.cell(
+        rx.cond(
+            feedback,
+            rx.hover_card.root(
+                # --- clickable trigger ---
+                rx.hover_card.trigger(
+                    rx.box(
+                        rx.text(
+                            feedback,
+                            size="2",
+                            weight="bold",
+                            color=rx.cond(
+                                feedback == "Legitimate",
+                                "var(--green-11)",
+                                rx.cond(
+                                    feedback == "Malicious",
+                                    "var(--red-11)",
+                                    rx.cond(feedback == "Interesting", "var(--orange-11)", "var(--gray-4)"),
+                                )
+                            )
+                        ),
+                        style={
+                            "padding": "0.3rem 0.7rem",
+                            "borderRadius": "6px",
+                            "cursor": "pointer",
+                            "display": "inline-block",
+                            "textAlign": "center",
+                            "backgroundColor": rx.cond(
+                                feedback == "Legitimate",
+                                "var(--green-3)",
+                                rx.cond(
+                                    feedback == "Malicious",
+                                    "var(--red-3)",
+                                    rx.cond(feedback == "Interesting", "var(--orange-3)", "var(--gray-4)"),
+                                ),
+                            ),
+                        },
+                    )
+                ),
+                # --- popup content ---
+                rx.hover_card.content(
+                    rx.vstack(
+                        rx.text("Decision: " + feedback, weight="medium"),
+                        rx.cond(comment, rx.text("Comment: " + comment), rx.text("No comment")),
+                        spacing="2",
+                        align="start",
+                    ),
+                    style={
+                        "padding": "0.75rem",
+                        "maxWidth": "320px",
+                        "whiteSpace": "normal",
+                        "backgroundColor": "white",
+                        "border": "1px solid var(--gray-6)",
+                        "borderRadius": "6px",
+                        "boxShadow": "0 6px 16px rgba(0,0,0,0.15)",
+                    },
+                ),
+            ),
+            rx.text("-", style={"color": "var(--gray-8)"})
+        ),
+        style={"verticalAlign": "middle", "textAlign": "center"},
+    )
+
+
+
+
+# -----------------------------
+# Filters
+# -----------------------------
 def yourcases_filters_panel() -> rx.Component:
     return rx.card(
         rx.form.root(
@@ -374,14 +496,12 @@ def yourcases_filters_panel() -> rx.Component:
     )
 
 
+# -----------------------------
+# Pagination
+# -----------------------------
 def _pagination_view() -> rx.Component:
     return rx.hstack(
-        rx.text(
-            "Page ",
-            rx.code(YourCasesState.page_number),
-            f" of {YourCasesState.total_pages}",
-            justify="end",
-        ),
+        rx.text("Page ", rx.code(YourCasesState.page_number), f" of {YourCasesState.total_pages}", justify="end"),
         rx.hstack(
             rx.icon_button(
                 rx.icon("chevrons-left", size=18),
@@ -400,27 +520,15 @@ def _pagination_view() -> rx.Component:
             rx.icon_button(
                 rx.icon("chevron-right", size=18),
                 on_click=YourCasesState.next_page,
-                opacity=rx.cond(
-                    YourCasesState.page_number == YourCasesState.total_pages, 0.6, 1
-                ),
-                color_scheme=rx.cond(
-                    YourCasesState.page_number == YourCasesState.total_pages,
-                    "gray",
-                    "accent",
-                ),
+                opacity=rx.cond(YourCasesState.page_number == YourCasesState.total_pages, 0.6, 1),
+                color_scheme=rx.cond(YourCasesState.page_number == YourCasesState.total_pages, "gray", "accent"),
                 variant="soft",
             ),
             rx.icon_button(
                 rx.icon("chevrons-right", size=18),
                 on_click=YourCasesState.last_page,
-                opacity=rx.cond(
-                    YourCasesState.page_number == YourCasesState.total_pages, 0.6, 1
-                ),
-                color_scheme=rx.cond(
-                    YourCasesState.page_number == YourCasesState.total_pages,
-                    "gray",
-                    "accent",
-                ),
+                opacity=rx.cond(YourCasesState.page_number == YourCasesState.total_pages, 0.6, 1),
+                color_scheme=rx.cond(YourCasesState.page_number == YourCasesState.total_pages, "gray", "accent"),
                 variant="soft",
             ),
             align="center",
@@ -435,6 +543,9 @@ def _pagination_view() -> rx.Component:
     )
 
 
+# -----------------------------
+# Feedback Modal
+# -----------------------------
 def operator_feedback_modal() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.content(
@@ -446,25 +557,19 @@ def operator_feedback_modal() -> rx.Component:
                         "Legitimate",
                         color_scheme="green",
                         on_click=lambda: OperatorFeedbackState.set_decision("legitimate"),
-                        variant=rx.cond(
-                            OperatorFeedbackState.decision == "legitimate", "solid", "soft"
-                        ),
+                        variant=rx.cond(OperatorFeedbackState.decision == "legitimate", "solid", "soft"),
                     ),
                     rx.button(
                         "Suspicious",
                         color_scheme="red",
                         on_click=lambda: OperatorFeedbackState.set_decision("suspicious"),
-                        variant=rx.cond(
-                            OperatorFeedbackState.decision == "suspicious", "solid", "soft"
-                        ),
+                        variant=rx.cond(OperatorFeedbackState.decision == "suspicious", "solid", "soft"),
                     ),
                     rx.button(
-                        "Unknown",
+                        "Interesting",
                         color_scheme="orange",
                         on_click=lambda: OperatorFeedbackState.set_decision("unknown"),
-                        variant=rx.cond(
-                            OperatorFeedbackState.decision == "unknown", "solid", "soft"
-                        ),
+                        variant=rx.cond(OperatorFeedbackState.decision == "unknown", "solid", "soft"),
                     ),
                     spacing="4",
                 ),
@@ -484,11 +589,7 @@ def operator_feedback_modal() -> rx.Component:
                     checked=OperatorFeedbackState.grant_feedback_use,
                     on_change=OperatorFeedbackState.toggle_feedback_use,
                 ),
-                rx.button(
-                    "Submit",
-                    on_click=OperatorFeedbackState.submit_feedback,
-                    width="100%",
-                ),
+                rx.button("Submit", on_click=OperatorFeedbackState.submit_feedback, width="100%"),
                 spacing="4",
                 width="100%",
             ),
@@ -502,22 +603,26 @@ def operator_feedback_modal() -> rx.Component:
     )
 
 
+# -----------------------------
+# Table
+# -----------------------------
 def yourcases_table() -> rx.Component:
     return rx.card(
         _pagination_view(),
         rx.table.root(
             rx.table.header(
                 rx.table.row(
-                    rx.table.column_header_cell("Date", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("AS1", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("AS2", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Presumed Attacker", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Presumed Victims", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Inference", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Observed Paths", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Recurrent", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Details", style={"verticalAlign": "middle"}),
-                    rx.table.column_header_cell("Give feedback", style={"verticalAlign": "middle"}),  # NEW
+                    rx.table.column_header_cell("Date"),
+                    rx.table.column_header_cell("AS1"),
+                    rx.table.column_header_cell("AS2"),
+                    rx.table.column_header_cell("Attacker(s)"),
+                    rx.table.column_header_cell("Victim(s)"),
+                    rx.table.column_header_cell("Inference"),
+                    rx.table.column_header_cell("# Paths"),
+                    rx.table.column_header_cell("Recurrent"),
+                    rx.table.column_header_cell("Details"),
+                    rx.table.column_header_cell("Your Feedback"),
+                    rx.table.column_header_cell("Give Feedback"),
                 ),
                 style={
                     "position": "sticky",
@@ -532,9 +637,7 @@ def yourcases_table() -> rx.Component:
                     YourCasesState.loading,
                     rx.table.row(
                         rx.table.cell(
-                            "Loading…",
-                            col_span=10,
-                            style={"textAlign": "center", "fontStyle": "italic"},
+                            "Loading…", col_span=11, style={"textAlign": "center", "fontStyle": "italic"}
                         )
                     ),
                     rx.cond(
@@ -542,55 +645,85 @@ def yourcases_table() -> rx.Component:
                         rx.table.row(
                             rx.table.cell(
                                 "No data matches your filters.",
-                                col_span=10,
+                                col_span=11,
                                 style={"textAlign": "center", "fontStyle": "italic"},
                             )
                         ),
                         rx.foreach(
                             YourCasesState.get_current_page,
                             lambda row: rx.table.row(
-                                rx.table.cell(row[0], style={"verticalAlign": "middle"}),
-                                rx.table.cell(_badge_link(row[1]), style={"verticalAlign": "middle"}),
-                                rx.table.cell(_badge_link(row[2]), style={"verticalAlign": "middle"}),
+                                rx.table.cell(row[0], style={"verticalAlign": "middle"},),
+                                rx.table.cell(_badge_link(row[1]), style={"verticalAlign": "middle"},),
+                                rx.table.cell(_badge_link(row[2]), style={"verticalAlign": "middle"},),
                                 _attacker_cell(row[3]),
                                 _victim_cell(row[4]),
                                 rx.table.cell(
                                     row[5],
                                     style=rx.cond(
                                         row[5] == "legitimate",
-                                        {"verticalAlign": "middle", "backgroundColor": "var(--green-3)"},
-                                        {"verticalAlign": "middle", "backgroundColor": "var(--red-3)"},
-                                    ),
+                                        {"backgroundColor": "var(--green-3)", "verticalAlign": "middle"},
+                                        {"backgroundColor": "var(--red-3)", "verticalAlign": "middle"},
+                                    )
                                 ),
                                 rx.table.cell(row[7], style={"verticalAlign": "middle"}),
-                                rx.table.cell(
-                                    rx.cond(row[8], rx.text("Yes"), rx.text("No")),
-                                    style={"verticalAlign": "middle"},
-                                ),
+                                rx.table.cell(rx.cond(row[8], rx.text("Yes"), rx.text("No")), style={"verticalAlign": "middle"}),
                                 rx.table.cell(
                                     rx.link(
-                                        rx.button(
-                                            "Details",
-                                            size="1",
-                                            variant="soft",
-                                            left_icon="info",
-                                        ),
+                                        rx.button("Details", size="1", variant="soft", left_icon="info"),
                                         href=f"/detail/{row[9]}",
                                     ),
-                                    style={"textAlign": "center", "verticalAlign": "middle"},
+                                    style={"verticalAlign": "middle"},
                                 ),
+                                _your_feedback_cell(row[10], row[11]),
                                 rx.table.cell(
                                     rx.cond(
                                         YourCasesState.asns.contains(row[2]),
                                         rx.button(
-                                            "Operator Feedback",
-                                            size="1",
-                                            variant="outline",
+                                            "Give us Feedback!",
+                                            size="2",
+                                            color_scheme="blue",   # not critical; styles below dominate
+                                            variant="solid",
+                                            left_icon="edit-3",
                                             on_click=lambda: OperatorFeedbackState.open_modal(row[9]),
+                                            style={
+                                                # shape & spacing
+                                                "display": "inline-flex",
+                                                "alignItems": "center",
+                                                "gap": "0.3rem",
+                                                "borderRadius": "9999px",      # pill
+                                                "padding": "0.25rem 0.6rem",
+                                                "fontWeight": "800",
+                                                "letterSpacing": "0.01em",
+
+                                                # solid, high-contrast look (no gradient)
+                                                "backgroundColor": "var(--blue-9)",
+                                                "border": "3px solid var(--blue-12)",
+                                                "color": "white",
+
+                                                # subtle depth + snappy interactions
+                                                "boxShadow": "0 6px 16px rgba(0,0,0,0.18)",
+                                                "transition": "transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease",
+                                                "cursor": "pointer",
+                                            },
+                                            _hover={
+                                                "transform": "translateY(-1px)",
+                                                "backgroundColor": "var(--blue-10)",
+                                                "borderColor": "var(--blue-12)",
+                                                "boxShadow": "0 10px 22px rgba(0,0,0,0.22)",
+                                            },
+                                            _active={
+                                                "transform": "translateY(0)",
+                                                "backgroundColor": "var(--blue-9)",
+                                                "boxShadow": "0 5px 14px rgba(0,0,0,0.18)",
+                                            },
+                                            _focus={
+                                                "outline": "none",
+                                                "boxShadow": "0 0 0 4px rgba(30, 64, 175, 0.35)",  # blue focus ring
+                                            },
                                         ),
                                         rx.text("-"),
                                     ),
-                                    style={"textAlign": "center", "verticalAlign": "middle"},
+                                    style={"verticalAlign": "middle"},  # no background behind the button
                                 ),
                             ),
                         ),
@@ -611,15 +744,14 @@ def yourcases_table() -> rx.Component:
     )
 
 
+
+
 # -----------------------------
 # Page
 # -----------------------------
 @rx.page(
     route="/your_cases",
-    on_load=[
-        YourCasesState.load_links,
-        AuthState.run_oauth_callback,  # must be an event
-    ],
+    on_load=[YourCasesState.init_time_window, YourCasesState.load_links, AuthState.run_oauth_callback],
 )
 def your_cases() -> rx.Component:
     return rx.fragment(
@@ -637,9 +769,9 @@ def your_cases() -> rx.Component:
                 ),
                 is_not_connected(),
             ),
-            margin_top="5rem",   # push below fixed navbar
+            margin_top="5rem",
         ),
-        operator_feedback_modal(),   # modal lives at page level
+        operator_feedback_modal(),
         footer(),
     )
 
