@@ -313,32 +313,101 @@ def _victim_cell(values: List[str]) -> rx.Component:
 
 
 
-def _feedback_cell(to_show: bool, feedback: str, comment: str) -> rx.Component:
+# def _feedback_cell(to_show: bool, feedback: str, comment: str) -> rx.Component:
+#     return rx.table.cell(
+#         rx.cond(
+#             to_show,
+#             rx.hover_card.root(
+#                 rx.hover_card.trigger(
+#                     rx.badge("Feedback", variant="surface", style={"cursor": "pointer"})
+#                 ),
+#                 rx.hover_card.content(
+#                     rx.vstack(
+#                         rx.text(f"Feedback: {feedback}", weight="medium"),
+#                         rx.cond(
+#                             comment,
+#                             rx.text(f"Comment: {comment}"),
+#                             rx.text("No comment"),
+#                         ),
+#                         spacing="2",
+#                         align="start",
+#                         style={"maxWidth": "300px", "whiteSpace": "normal"},
+#                     )
+#                 ),
+#             ),
+#             rx.text("-", style={"color": "var(--gray-8)"})
+#         ),
+#         style={"verticalAlign": "middle", "textAlign": "center"},
+#     )
+
+
+
+def _feedback_cell(to_show: bool, feedback: rx.Var[str], comment: rx.Var[str]) -> rx.Component:
+    """Show colored rectangle with decision text and click-to-open comment box."""
     return rx.table.cell(
         rx.cond(
             to_show,
             rx.hover_card.root(
+                # --- clickable trigger ---
                 rx.hover_card.trigger(
-                    rx.badge("Feedback", variant="surface", style={"cursor": "pointer"})
+                    rx.box(
+                        rx.text(
+                            feedback,
+                            size="2",
+                            weight="bold",
+                            color=rx.cond(
+                                feedback == "Legitimate",
+                                "var(--green-11)",
+                                rx.cond(
+                                    feedback == "Malicious",
+                                    "var(--red-11)",
+                                    rx.cond(feedback == "Interesting", "var(--orange-11)", "var(--gray-4)"),
+                                )
+                            )
+                        ),
+                        style={
+                            "padding": "0.3rem 0.7rem",
+                            "borderRadius": "6px",
+                            "cursor": "pointer",
+                            "display": "inline-block",
+                            "textAlign": "center",
+                            "backgroundColor": rx.cond(
+                                feedback == "Legitimate",
+                                "var(--green-3)",
+                                rx.cond(
+                                    feedback == "Malicious",
+                                    "var(--red-3)",
+                                    rx.cond(feedback == "Interesting", "var(--orange-3)", "var(--gray-4)"),
+                                ),
+                            ),
+                        },
+                    )
                 ),
+                # --- popup content ---
                 rx.hover_card.content(
                     rx.vstack(
-                        rx.text(f"Feedback: {feedback}", weight="medium"),
-                        rx.cond(
-                            comment,
-                            rx.text(f"Comment: {comment}"),
-                            rx.text("No comment"),
-                        ),
+                        rx.text(f"Decision: {feedback}", weight="medium"),
+                        rx.cond(comment, rx.text(f"Comment: {comment}"), rx.text("No comment")),
                         spacing="2",
                         align="start",
-                        style={"maxWidth": "300px", "whiteSpace": "normal"},
-                    )
+                    ),
+                    style={
+                        "padding": "0.75rem",
+                        "maxWidth": "320px",
+                        "whiteSpace": "normal",
+                        "backgroundColor": "white",
+                        "border": "1px solid var(--gray-6)",
+                        "borderRadius": "6px",
+                        "boxShadow": "0 6px 16px rgba(0,0,0,0.15)",
+                    },
                 ),
             ),
             rx.text("-", style={"color": "var(--gray-8)"})
         ),
         style={"verticalAlign": "middle", "textAlign": "center"},
     )
+
+
 
 
 def filters_panel() -> rx.Component:
