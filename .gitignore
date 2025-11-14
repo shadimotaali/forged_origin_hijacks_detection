@@ -66,3 +66,5 @@ dashboard/__pycache__
 dashboard/*/__pycache__
 dashboard/logs.log
 
+public_api/__pycache__
+
