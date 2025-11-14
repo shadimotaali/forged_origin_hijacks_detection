@@ -4,10 +4,10 @@ from psycopg2.extensions import connection
 
 
 def boolean_to_str_legitimacy(val :bool):
-    if val == "leg":
+    if val == True:
         return "legitimate"
     
-    elif val == "sus":
+    elif val == False:
         return "suspicious"
     
     else:
@@ -52,31 +52,31 @@ def _build_conditions(asn :list[int]=None,
     conditions = list()
 
     if asn:
-        conditions.append("({} OR {})".format(_build_match_list("asn1", asn), _build_match_list("asn2", asn)))
+        conditions.append("({} OR {})".format(_build_match_list("as1", asn), _build_match_list("as2", asn)))
 
     if attackers:
-        conditions.append("attackers && ARRAY{}::BIGINT[]".format(attackers))
+        conditions.append("attacker = ANY(ARRAY{})".format(attackers))
 
     if victims:
         conditions.append("victims && ARRAY{}::BIGINT[]".format(victims))
 
-    if inference_result:
-        conditions.append("classification = {}".format(inference_result))
+    if inference_result is not None:
+        conditions.append("is_legit = {}".format(inference_result))
 
     if min_confidence_level:
         conditions.append("confidence_level >= {}".format(min_confidence_level))
 
     if nb_max_aspaths:
-        conditions.append("num_paths <= {}".format(nb_max_aspaths))
+        conditions.append("nb_aspaths <= {}".format(nb_max_aspaths))
 
     if nb_min_aspaths:
         conditions.append("nb_aspaths >= {}".format(nb_min_aspaths))
 
     if start_ts:
-        conditions.append("observed_at >= {}".format(start_ts))
+        conditions.append("timestamp >= {}".format(start_ts))
 
     if stop_ts:
-        conditions.append("observed_at >= {}".format(stop_ts))
+        conditions.append("timestamp >= {}".format(stop_ts))
 
     if new_link_ids:
         conditions.append(_build_match_list("id", new_link_ids))
@@ -98,7 +98,7 @@ def get_new_links(pg_helper :connection,
                   new_link_ids :list[int]):
 
 
-    query = "SELECT id, observed_at, asn1, asn2, attackers, victims, classification, confidence_level, num_paths, is_reccurent, user_feedback, user_comment, authorize_others FROM inference_summary"
+    query = "SELECT id_, timestamp, as1, as2, attacker, victims, is_legit, confidence_level, nb_aspaths, is_recurrent, user_feedback, user_comment, authorize_others FROM new_links"
 
     conditions = _build_conditions(asn=asn,
                                    attackers=attackers,
@@ -113,16 +113,19 @@ def get_new_links(pg_helper :connection,
     
     ### --- Add all filters to the query --- ###
     if len(conditions):
-        query += "WHERE {};".format(" AND ".join(conditions))
+        query += " WHERE {};".format(" AND ".join(conditions))
     else:
         query += ";"
 
+    print(query)
+
     ok, res = execute_read_query(pg_helper, query)
     if not ok:
+        print(res)
         return {"code": 404, "detail": "Unable to execute the query. Please retry later."}
     
 
-    results :list[dict[str, int | str | list[int]]] = dict()
+    results :list[dict[str, int | str | list[int]]] = list()
 
     for id, observed_at, asn1, asn2, attackers, victims, classification, confidence_level, num_paths, is_reccurent, user_feedback, user_comment, authorize_others in res:
         case_ = dict()
@@ -153,45 +156,17 @@ def get_inference_details(pg_helper :connection,
                           new_link_ids :list[int]):
     
     ### --- Build the query to get the inference details --- ###
-    query = "SELECT observed_at, asn1, asn2, inference_id, peer_asn, peer_ip, as_path, prefix FROM inferences WHERE inference_id = ANY(ARRAY{});".format(new_link_ids)
+    query = "SELECT timestamp, as1, as2, new_link_id, vp_asn, vp_ip, aspath, prefix, is_legit FROM inferences WHERE new_link_id = ANY(ARRAY{});".format(new_link_ids)
 
     ### --- Retreive results --- ###
     ok, res = execute_read_query(pg_helper, query)
     if not ok:
         return {"code": 404, "detail": "Unable to execute the query. Please retry later."}
-    
-
-    ids = set()
-
-    for _, _, _, id_, _, _, _, _ in res:
-        ids.add(id_)
-
-    values = dict()
-
-    for id_ in ids:
-        query = "SELECT is_origin_rpki_valid, is_local, classification, confidence_level FROM inference_summary WHERE id = {};".format(id_)
-
-        ok, tmp_res = execute_read_query(pg_helper, query)
-        if not ok:
-            return {"code": 404, "detail": "Unable to execute the query. Please retry later."}
-        
-        pfxs_tags = list()
-        for is_origin_rpki_valid, is_local, classification, confidence_level in tmp_res:
-            if is_origin_rpki_valid:
-                pfxs_tags.append("RPKI valid")
-            else:
-                pfxs_tags.append("RPKI invalid")
-
-            if not is_local:
-                pfxs_tags.append("Origin invalid")
-
-            values[id_] = [boolean_to_str_legitimacy(classification), confidence_level, [], pfxs_tags]
 
     
     results :dict[int, list[tuple[str, int, int, int, str, str, str, str, int, list[str], list[str]]]] = dict()
 
-    for observed_at, asn1, asn2, inference_id, peer_asn, peer_ip, as_path, prefix in res:
-        is_legit, confidence_level, asp_tags, pfx_tags = values[inference_id]
+    for observed_at, asn1, asn2, inference_id, peer_asn, peer_ip, as_path, prefix, is_legit in res:
 
         case_ = (observed_at, 
                  asn1, 
@@ -201,9 +176,9 @@ def get_inference_details(pg_helper :connection,
                  as_path, 
                  prefix, 
                  is_legit, 
-                 confidence_level, 
-                 asp_tags, 
-                 pfx_tags)
+                 0 if is_legit else 5, 
+                 list(), 
+                 list())
 
         if inference_id not in results:
             results[inference_id] = list()

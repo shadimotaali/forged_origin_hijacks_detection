@@ -24,21 +24,21 @@ def create_tables():
 
     # Create inference_summary table
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS inference_summary (
-            id SERIAL PRIMARY KEY,
-            asn1 BIGINT NOT NULL,
-            asn2 BIGINT NOT NULL,
-            classification VARCHAR(3) NOT NULL,
+        CREATE TABLE IF NOT EXISTS new_links (
+            id_ SERIAL PRIMARY KEY,
+            as1 BIGINT NOT NULL,
+            as2 BIGINT NOT NULL,
+            is_legit BOOLEAN NOT NULL,
             confidence_level SMALLINT NOT NULL,
             num_legit_inf INT NOT NULL,
             num_susp_inf INT NOT NULL,
-            num_paths INT NOT NULL,
-            attackers BIGINT[] NOT NULL,
+            nb_aspaths INT NOT NULL,
+            attackers BIGINT NOT NULL,
             victims BIGINT[] NOT NULL,
             hijack_types INT[] NOT NULL,
             is_origin_rpki_valid BOOLEAN NOT NULL,
             is_recurrent BOOLEAN NOT NULL,
-            observed_at TIMESTAMP NOT NULL,
+            timestamp TIMESTAMP NOT NULL,
             is_local BOOLEAN NOT NULL,
             operator_validation SMALLINT,
             operator_feedback TEXT,
@@ -60,17 +60,18 @@ def create_tables():
 
     # Create new_link table
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS new_link (
-            id SERIAL PRIMARY KEY,
-            asn1 BIGINT NOT NULL,
-            asn2 BIGINT NOT NULL,
-            as_path TEXT NOT NULL,
-            observed_at TIMESTAMP NOT NULL,
+        CREATE TABLE IF NOT EXISTS inferences (
+            id_ SERIAL PRIMARY KEY,
+            as1 BIGINT NOT NULL,
+            as2 BIGINT NOT NULL,
+            aspath TEXT NOT NULL,
+            timestamp TIMESTAMP NOT NULL,
             prefix CIDR NOT NULL,
-            peer_ip INET,
-            peer_asn BIGINT NOT NULL,
+            is_legit BOOLEAN NOT NULL,
+            vp_ip INET,
+            vp_asn BIGINT NOT NULL,
             is_recurrent BOOLEAN NOT NULL,
-            inference_id INTEGER REFERENCES inference_summary(id) ON DELETE SET NULL
+            new_link_id INTEGER REFERENCES new_links(id) ON DELETE SET NULL
         );
     """)
 

@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 from public_api.read import get_new_links, get_inference_details
 from public_api.write import operator_feedback
 import os
@@ -6,7 +8,7 @@ import psycopg2
 import uvicorn
 import time
 import datetime
-import sys
+
 
 
 
@@ -32,10 +34,10 @@ def parse_decision(decision :str):
 
 
 DB_CONFIG = {
-    "dbname": os.getenv("DB_NAME", "db_name"),
-    "user": os.getenv("DB_USER", "db_user"),
-    "password": os.getenv("DB_PASSWORD", "db_pwd"),
-    "host": os.getenv("DB_HOST", "localhost"),
+    "dbname": os.getenv("DB_NAME", "bgproutes_dfoh"),
+    "user": os.getenv("DB_USER", "production"),
+    "password": os.getenv("DB_PASSWORD", "production"),
+    "host": os.getenv("DB_HOST", "192.168.200.1"),
     "port": 5432
 }
 
