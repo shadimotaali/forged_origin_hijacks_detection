@@ -73,10 +73,10 @@ def _build_conditions(asn :list[int]=None,
         conditions.append("nb_aspaths >= {}".format(nb_min_aspaths))
 
     if start_ts:
-        conditions.append("timestamp >= {}".format(start_ts))
+        conditions.append("timestamp >= '{}'".format(start_ts))
 
     if stop_ts:
-        conditions.append("timestamp >= {}".format(stop_ts))
+        conditions.append("timestamp >= '{}'".format(stop_ts))
 
     if new_link_ids:
         conditions.append(_build_match_list("id", new_link_ids))
@@ -98,7 +98,7 @@ def get_new_links(pg_helper :connection,
                   new_link_ids :list[int]):
 
 
-    query = "SELECT id_, timestamp, as1, as2, attacker, victims, is_legit, confidence_level, nb_aspaths, is_recurrent, user_feedback, user_comment, authorize_others FROM new_links"
+    query = "SELECT id_, timestamp, as1, as2, attacker, victims, is_legit, confidence_level, nb_aspaths, is_recurrent, operator_feedback, authorize_others FROM new_links"
 
     conditions = _build_conditions(asn=asn,
                                    attackers=attackers,
@@ -127,14 +127,14 @@ def get_new_links(pg_helper :connection,
 
     results :list[dict[str, int | str | list[int]]] = list()
 
-    for id, observed_at, asn1, asn2, attackers, victims, classification, confidence_level, num_paths, is_reccurent, user_feedback, user_comment, authorize_others in res:
+    for id, observed_at, asn1, asn2, attacker, victims, classification, confidence_level, num_paths, is_reccurent, user_feedback, authorize_others in res:
         case_ = dict()
     
         case_["id"] = id
         case_["date"] = observed_at
         case_["as1"] = asn1
         case_["as2"] = asn2
-        case_["presumed_attacker"] = attackers
+        case_["presumed_attacker"] = attacker
         case_["presumed_victims"] = victims
         case_["inference_result"] = boolean_to_str_legitimacy(classification)
         case_["confidence_level"] = confidence_level
@@ -143,7 +143,6 @@ def get_new_links(pg_helper :connection,
 
         if user_feedback and authorize_others:
             case_["operator_feedback"] = user_feedback
-            case_["operator_comment"] = user_comment
 
         results.append(case_)
 

@@ -33,7 +33,7 @@ def create_tables():
             num_legit_inf INT NOT NULL,
             num_susp_inf INT NOT NULL,
             nb_aspaths INT NOT NULL,
-            attackers BIGINT NOT NULL,
+            attacker BIGINT NOT NULL,
             victims BIGINT[] NOT NULL,
             hijack_types INT[] NOT NULL,
             is_origin_rpki_valid BOOLEAN NOT NULL,
