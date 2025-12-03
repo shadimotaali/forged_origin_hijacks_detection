@@ -11,16 +11,37 @@ import urllib.parse
 import requests
 import jwt
 from backend.user import User
+from collections import OrderedDict
+import re
 
 
 # Read environment variables.
 load_dotenv()
 
+
+def sanitize_for_log(text: str) -> str:
+    # Replace newlines and carriage returns with literal escape sequences
+    text = text.replace("\n", "\\n").replace("\r", "\\r")
+
+    # Remove all other control characters except tab
+    text = re.sub(r"[\x00-\x08\x0b-\x1f\x7f]", "?", text)
+
+    # Optional: truncate to avoid huge logs
+    return text[:2000]
+
+
+LOG_PATH = "/tmp/logs.log"
+
+file_handler = logging.FileHandler(LOG_PATH, mode='a', encoding='utf-8')
+
+# Set permissions to 600 (rw-------)
+os.chmod(LOG_PATH, 0o600)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("/tmp/logs.log", mode='a', encoding='utf-8'),
+        file_handler,
         logging.StreamHandler()
     ]
 )
@@ -51,8 +72,8 @@ COOKIE_MAX_AGE = int(os.getenv('COOKIE_MAX_AGE')) # Minutes
 new_users_buffer = {}
 
 # Needed to oauth, especially for safari..
-oauth2_server_state = {}
-
+oauth2_server_state = OrderedDict()
+MAX_STATE_SIZE = 10000
 
 class AuthState(rx.State):
     """The authentication state for sign up and login page."""
@@ -98,7 +119,7 @@ class AuthState(rx.State):
         if self.session_token:
             try:
                 content = jwt.decode(self.session_token, secret_key, algorithms=["HS256"])
-                logging.info("Decoded JWT for email: %s, session_id: %s", content.get('email'), content.get('session_id'))
+                logging.info("Decoded JWT for email: %s, session_id: %s", sanitize_for_log(content.get('email')), sanitize_for_log(content.get('session_id')))
                 if content and content['email'] in connections:
                     # If the user in the cookie has the session_id (legitimate case).
                     if content['session_id'] in connections[content['email']]:
@@ -116,32 +137,32 @@ class AuthState(rx.State):
                                 self.asns = content['asns']
 
                                 self.is_authenticated = True
-                                logging.info(f'User: {self.email} ASN: {self.asns_info} {self.asns}')
+                                logging.info(f'User: {sanitize_for_log(self.email)} ASN: {sanitize_for_log(self.asns_info)} {sanitize_for_log(self.asns)}')
 
                             # Update the connection time.
                             connections[self.user.email][content['session_id']] = time.time()
-                            logging.info("Updated session time for %s, session_id %s", self.user.email, content['session_id'])
+                            logging.info("Updated session time for %s, session_id %s", sanitize_for_log(self.user.email), sanitize_for_log(content['session_id']))
                         # If the cookie has timeout, logout.
                         else:
-                            logging.info(f'Cookie has timeout for user {self.email}')
+                            logging.info(f'Cookie has timeout for user {sanitize_for_log(self.email)}')
                             self.logout()
                     # If the content in the cookie is bogus, logout.
                     else:
-                        logging.warning(f'Cookie session_id is bogus for user {self.email}')
+                        logging.warning(f'Cookie session_id is bogus for user {sanitize_for_log(self.email)}')
                         self.logout()
                 # If the content in the cookie is bogus, logout.
                 else:
-                    logging.warning(f'Cookie could not be decoded or user not in connections: {self.email}')
+                    logging.warning(f'Cookie could not be decoded or user not in connections: {sanitize_for_log(self.email)}')
                     self.logout()
             except jwt.ExpiredSignatureError:
-                logging.error('JWT: Expired signature error for user: %s', self.email)
+                logging.error('JWT: Expired signature error for user: %s', sanitize_for_log(self.email))
                 return None
             except jwt.InvalidTokenError:
-                logging.error('JWT: Invalid token error for user: %s', self.email)
+                logging.error('JWT: Invalid token error for user: %s', sanitize_for_log(self.email))
                 return None
         # If there is no cookie (e.g., after logout).
         elif self.is_authenticated:
-            logging.info(f'Logout {self.email} because no cookie')
+            logging.info(f'Logout {sanitize_for_log(self.email)} because no cookie')
             self.logout()
 
 
@@ -157,21 +178,21 @@ class AuthState(rx.State):
                     content = jwt.decode(self.session_token, secret_key, algorithms=["HS256"])
                     if content['session_id'] in connections[content['email']]:
                         del connections[content['email']][content['session_id']]
-                        logging.info("Removed session_id %s for user %s", content['session_id'], content['email'])
+                        logging.info("Removed session_id %s for user %s", sanitize_for_log(content['session_id']), sanitize_for_log(content['email']))
                 except jwt.ExpiredSignatureError:
-                    logging.error('JWT: Expired signature error during logout for user: %s', self.email)
+                    logging.error('JWT: Expired signature error during logout for user: %s', sanitize_for_log(self.email))
                     return None
                 except jwt.InvalidTokenError:
-                    logging.error('JWT: Invalid token error during logout for user: %s', self.email)
+                    logging.error('JWT: Invalid token error during logout for user: %s', sanitize_for_log(self.email))
                     return None
 
             if len(connections[self.email]) == 0:
                 del connections[self.email]
-                logging.info("Removed all sessions for user %s", self.email)
+                logging.info("Removed all sessions for user %s", sanitize_for_log(self.email))
 
         # Remove cookie from the client browser.
         rx.remove_cookie('session_token')
-        logging.info("Cookies removed for user %s", self.email)
+        logging.info("Cookies removed for user %s", sanitize_for_log(self.email))
 
         # Reset all state variables.
         self.reset()
@@ -193,6 +214,10 @@ class AuthState(rx.State):
         # Generate and store server-side state
         state = secrets.token_urlsafe(32)
         self.is_loading = True
+
+        if len(oauth2_server_state) >= MAX_STATE_SIZE:
+            oauth2_server_state.popitem(last=False)
+
         oauth2_server_state[state] = {
             'provider': 'peeringdb',
             'timestamp': time.time(),
@@ -206,7 +231,7 @@ class AuthState(rx.State):
             'response_type': 'code',
         })
         url = provider_data['authorize_url'] + '?' + qs
-        logging.info("Redirecting to PeeringDB OAuth2 URL: %s", url)
+        logging.info("Redirecting to PeeringDB OAuth2 URL: %s", sanitize_for_log(url))
         return rx.redirect(url)
 
 
@@ -237,7 +262,7 @@ class AuthState(rx.State):
         self.open_auth_dialog("loading")
         self.is_loading = True
         logging.info("OAuth2 params detected. state=%s code=%s error=%s",
-                    state, "present" if code else None, provider_error)
+                    sanitize_for_log(state), "present" if code else None, sanitize_for_log(provider_error))
 
         # If the provider returned an explicit error (user cancelled, etc.)
         if provider_error:
@@ -257,7 +282,7 @@ class AuthState(rx.State):
             for k in expired:
                 oauth2_server_state.pop(k, None)
         except Exception as e:
-            logging.error("Error pruning oauth2_server_state: %s", e)
+            logging.error("Error pruning oauth2_server_state: %s", sanitize_for_log(e))
 
         # 4) Validate required params
         if not state or not code:
@@ -270,7 +295,7 @@ class AuthState(rx.State):
         # 5) Restore context from server state (single-use)
         ctx = oauth2_server_state.pop(state, None)
         if not ctx:
-            logging.error("OAuth2 callback: Unknown or expired state: %s", state)
+            logging.error("OAuth2 callback: Unknown or expired state: %s", sanitize_for_log(state))
             self.auth_status = "error"
             self.auth_error = "Your sign-in session expired. Please try again."
             self.is_loading = False
@@ -279,13 +304,13 @@ class AuthState(rx.State):
         provider = ctx.get('provider')
         provider_data = config_oauth2_providers.get(provider or "")
         if not provider_data:
-            logging.error("OAuth2 callback: Unknown provider in state: %s", provider)
+            logging.error("OAuth2 callback: Unknown provider in state: %s", sanitize_for_log(provider))
             self.auth_status = "error"
             self.auth_error = "Unknown identity provider."
             self.is_loading = False
             return
 
-        logging.info("OAuth2 provider restored from server state: %s", provider)
+        logging.info("OAuth2 provider restored from server state: %s", sanitize_for_log(provider))
 
         # Let the dialog render the loading content before network calls
         yield
@@ -313,7 +338,7 @@ class AuthState(rx.State):
             token_resp.raise_for_status()
             if token_resp.status_code != 200:
                 logging.error("OAuth2 token exchange failed (%s): %d - %s",
-                            provider, token_resp.status_code, token_resp.text)
+                            sanitize_for_log(provider), sanitize_for_log(token_resp.status_code), sanitize_for_log(token_resp.text))
                 self.auth_status = "error"
                 self.auth_error = "Token exchange failed."
                 return
@@ -322,7 +347,7 @@ class AuthState(rx.State):
             oauth2_token = token_json.get('access_token')
             if not oauth2_token:
                 logging.error("OAuth2 token exchange returned no access_token for provider: %s (payload=%s)",
-                            provider, token_json)
+                            sanitize_for_log(provider), sanitize_for_log(token_json))
                 self.auth_status = "error"
                 self.auth_error = "No access token received."
                 return
@@ -334,7 +359,7 @@ class AuthState(rx.State):
             ui_resp.raise_for_status()
             if ui_resp.status_code != 200:
                 logging.error("Failed to retrieve userinfo (%s): %d - %s",
-                            provider, ui_resp.status_code, ui_resp.text)
+                            sanitize_for_log(provider), sanitize_for_log(ui_resp.status_code), sanitize_for_log(ui_resp.text))
                 self.auth_status = "error"
                 self.auth_error = "Failed to retrieve your profile."
                 return
@@ -350,7 +375,7 @@ class AuthState(rx.State):
             except Exception:
                 networks = []
 
-            logging.info("Authenticated user email from OAuth (%s): %s", provider, self.email)
+            logging.info("Authenticated user email from OAuth (%s): %s", sanitize_for_log(provider), sanitize_for_log(self.email))
 
             # 9) Sign in / sign up
             with rx.session() as session:
@@ -358,7 +383,7 @@ class AuthState(rx.State):
                 if user:
                     self.user = user
                     self.is_authenticated = True
-                    logging.info("User found in database: %s", self.email)
+                    logging.info("User found in database: %s", sanitize_for_log(self.email))
                 else:
                     self.user = User(
                         email=self.email,
@@ -370,7 +395,7 @@ class AuthState(rx.State):
                     session.expire_on_commit = False
                     session.commit()
                     self.is_authenticated = True
-                    logging.info("Created new user in database: %s", self.email)
+                    logging.info("Created new user in database: %s", sanitize_for_log(self.email))
 
                 # PeeringDB networks → ASNs
                 for n in networks or []:

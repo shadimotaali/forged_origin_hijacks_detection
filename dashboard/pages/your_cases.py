@@ -330,7 +330,7 @@ class OperatorFeedbackState(rx.State):
 # -----------------------------
 def _badge_link(asn: str) -> rx.Component:
     return rx.badge(
-        rx.link(asn, href="https://bgp.he.net/AS" + asn, target="_blank"),
+        rx.link(asn, href="https://as-explorer.bgproutes.io/?asn=" + asn, target="_blank"),
         style={"verticalAlign": "middle"},
     )
 
@@ -340,7 +340,7 @@ def _attacker_cell(values: List[str]) -> rx.Component:
         rx.box(
             rx.foreach(
                 values,
-                lambda x: rx.badge(rx.link(x, href="https://bgp.he.net/AS" + x, target="_blank")),
+                lambda x: rx.badge(rx.link(x, href="https://as-explorer.bgproutes.io/?asn=" + x, target="_blank")),
             ),
             style={"display": "flex", "flexWrap": "wrap"},
         ),
@@ -360,7 +360,7 @@ def _victim_cell(values: List[str]) -> rx.Component:
                     rx.box(
                         rx.foreach(
                             values,
-                            lambda x: rx.badge(rx.link(x, href="https://bgp.he.net/AS" + x, target="_blank")),
+                            lambda x: rx.badge(rx.link(x, href="https://as-explorer.bgproutes.io/?asn=" + x, target="_blank")),
                         ),
                         style={"display": "flex", "flexWrap": "wrap", "maxWidth": "360px"},
                     )
@@ -369,7 +369,7 @@ def _victim_cell(values: List[str]) -> rx.Component:
             rx.box(
                 rx.foreach(
                     values,
-                    lambda x: rx.badge(rx.link(x, href="https://bgp.he.net/AS" + x, target="_blank")),
+                    lambda x: rx.badge(rx.link(x, href="https://as-explorer.bgproutes.io/?asn=" + x, target="_blank")),
                 ),
                 style={"display": "flex", "flexWrap": "wrap"},
             ),

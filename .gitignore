@@ -67,4 +67,6 @@ dashboard/*/__pycache__
 dashboard/logs.log
 
 public_api/__pycache__
+nginx.conf
+
 

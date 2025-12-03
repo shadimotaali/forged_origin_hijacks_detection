@@ -6,4 +6,4 @@
 image_name="dfoh-dashboard-image"
 
 cd ..
-docker build --no-cache --tag=$image_name -f dashboard/docker/Dockerfile .
+docker build --build-arg USERNAME=$(whoami) --build-arg UID=$(id -u) --build-arg GID=$(id -g) --tag=$image_name -f dashboard/docker/Dockerfile .
