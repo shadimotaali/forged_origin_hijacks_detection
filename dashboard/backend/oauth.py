@@ -45,7 +45,7 @@ config_oauth2_providers = {
 }
 
 # For session-based authentification.
-secret_key = os.getenv('SESSION_AUTHENTIFICATION_SECRET_KEY')
+secret_key = secrets.token_hex(nbytes=32)
 connections = {}
 COOKIE_MAX_AGE = int(os.getenv('COOKIE_MAX_AGE')) # Minutes
 new_users_buffer = {}

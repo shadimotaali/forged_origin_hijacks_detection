@@ -302,7 +302,9 @@ class OperatorFeedbackState(rx.State):
                     "feedback": self.feedback_text,
                     "authorize_others": "true" if self.authorize_others else "false",
                     "grant_feedback_use": "true" if self.grant_feedback_use else "false",
-                    "api_key": os.environ.get("SECURED_WRITE_API_KEY"),
+                },
+                headers={
+                    "X-API-Key": os.environ.get("SECURED_WRITE_API_KEY")
                 },
                 timeout=10,
             )

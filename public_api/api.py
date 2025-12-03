@@ -3,7 +3,7 @@ sys.path.append("..")
 from public_api.read import get_new_links, get_inference_details
 from public_api.write import operator_feedback
 import os
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Header
 import psycopg2
 import uvicorn
 import time
@@ -236,7 +236,7 @@ class DFOHExternalAPI:
                                feedback :str=Query(None, description="Extended comment of the operator regarding the new link case."),
                                authorize_others :bool=Query(..., description="Tells if we authorize the feedback to be seen by other users."),
                                grant_feedback_use :bool=Query(..., description="Tells if we ar granted to use this feedback to perform some measureent anlysis."),
-                               api_key :str=Query(..., description="Mandatory API key. Enables to use this endpoint only from the website.")):
+                               api_key: str = Header(..., alias="X-API-Key", description="Mandatory API key in HTTP headers.")):
         
         if api_key != os.environ.get("SECURED_WRITE_API_KEY"):
             raise HTTPException(status_code=400, detail="Unable to recognize API key, skiping.")
