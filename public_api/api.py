@@ -158,21 +158,23 @@ class DFOHExternalAPI:
 
         ## -- Check the starting date parameter -- ##
         if start_time:
-            start_time_val = start_time.split("T")[0]
+            try:
+                start_time_val = int(datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M").timestamp())
 
-            if start_time_val == -1:
+            except:
                 raise HTTPException(status_code=404, detail="Parameter 'start_time' must be a date in ISO format (YYYY-MM-DDTHH:MM). Value '{}' is not valid.".format(start_time))
         else:
-            start_time_val = datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d")
+            start_time_val = int(time.time()) - 7200
 
         ## -- Check the ending date parameter -- ##
         if stop_time:
-            stop_time_val = stop_time.split("T")[0]
+            try:
+                stop_time_val = datetime.datetime.strptime(stop_time, "%Y-%m-%dT%H:%M").timestamp()
 
-            if stop_time_val == -1:
+            except:
                 raise HTTPException(status_code=404, detail="Parameter 'stop_time' must be a date in ISO format (YYYY-MM-DDTHH:MM). Value '{}' is not valid.".format(stop_time))
         else:
-            stop_time_val = start_time_val
+            stop_time_val = int(start_time_val) + 7200
 
         
         ## -- Check new link IDs parameter -- ##

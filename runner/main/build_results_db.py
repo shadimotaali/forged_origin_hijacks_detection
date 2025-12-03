@@ -41,7 +41,7 @@ def create_tables():
             timestamp TIMESTAMP NOT NULL,
             is_local BOOLEAN NOT NULL,
             operator_validation SMALLINT,
-            operator_feedback TEXT,
+            user_comment TEXT,
             authorize_others BOOLEAN DEFAULT false,
             grant_feedback_use BOOLEAN DEFAULT false
         );
