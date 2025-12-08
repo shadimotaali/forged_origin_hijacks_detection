@@ -43,7 +43,7 @@ class CollectUpdates:
             if not vp.is_active:
                 continue
             try:
-                topo = topology([vp], date_str, with_aspath=False, with_rib=False, with_updates=True, as_to_ignore=ases_to_ignore, ignore_private_asns=True)
+                topo = topology([vp], date_str, with_aspath=False, with_rib=False, with_updates=True, as_to_ignore=ases_to_ignore, ignore_private_asns=True, directed=True)
                 for link in topo['links']:
                     all_links.add((link[0], link[1], vp.ip))
             except Exception as e:

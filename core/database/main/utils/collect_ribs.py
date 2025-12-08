@@ -42,7 +42,7 @@ class CollectRibs:
             batch = self.vps_set[i:i + vp_ips_batch_size]
             batch = [vp for vp in batch if vp.is_active]
             try:
-                topo = topology(batch, date_str, with_aspath=True, with_rib=True, with_updates=False, as_to_ignore=ases_to_ignore, ignore_private_asns=True)
+                topo = topology(batch, date_str, with_aspath=True, with_rib=True, with_updates=False, as_to_ignore=ases_to_ignore, ignore_private_asns=True, directed=True)
                 # Normalize links as tuples of integers
                 for link in topo["links"]:
                     all_links.add(tuple(link))
